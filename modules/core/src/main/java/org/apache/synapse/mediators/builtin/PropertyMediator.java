@@ -243,6 +243,12 @@ public class PropertyMediator extends AbstractMediator {
                 if (resultValue != null ) {
                     System.setProperty(name, resultValue.toString());
                 }
+            } else if (XMLConfigConstants.SCOPE_EXTERNAL_ANALYTICS.equals(scope)
+                && synCtx instanceof Axis2MessageContext) {
+                Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
+                if (resultValue != null ) {
+                    axis2smc.setExternalAnalyticData(name, resultValue);
+                }
             }
 
         } else {
