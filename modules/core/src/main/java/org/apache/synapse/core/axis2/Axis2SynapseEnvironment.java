@@ -53,6 +53,7 @@ import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.debug.SynapseDebugManager;
+import org.apache.synapse.elk.analytics.ElasticsearchAnalyticsPublisherThread;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.endpoints.dispatch.Dispatcher;
 import org.apache.synapse.inbound.InboundEndpoint;

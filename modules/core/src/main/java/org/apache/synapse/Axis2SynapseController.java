@@ -398,6 +398,7 @@ public class Axis2SynapseController implements SynapseController {
         //we initialize xpath extensions here since synapse environment is available
         initXpathExtensions(synapseEnvironment);
 
+
         try {
             deployMediationLibraryArtifacts();
             deployMediatorExtensions();

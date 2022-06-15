@@ -23,11 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpStatus;
 import org.apache.http.protocol.HTTP;
-import org.apache.synapse.ManagedLifecycle;
-import org.apache.synapse.Mediator;
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseArtifact;
-import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.*;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
@@ -42,6 +38,9 @@ import org.apache.synapse.api.dispatch.RESTDispatcher;
 import org.apache.synapse.api.version.DefaultStrategy;
 import org.apache.synapse.api.version.URLBasedVersionStrategy;
 import org.apache.synapse.api.version.VersionStrategy;
+import org.apache.synapse.elk.analytics.ElasticsearchAnalyticsPublisherThread;
+import org.apache.synapse.elk.analytics.ExternalAnalyticsPublisher;
+import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.rest.Handler;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
@@ -51,6 +50,7 @@ import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.util.logging.LoggingUtils;
+import org.json.JSONObject;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -404,7 +404,7 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
             }
 
             if (!proceed) {
-                return;
+                return; // ???
             }
         }
 
@@ -418,7 +418,8 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
             } else if (log.isDebugEnabled()) {
                 auditDebug("No resource information on the response: " + synCtx.getMessageID());
             }
-            return;
+
+            return; // ???
         }
 
         String path = ApiUtils.getFullRequestPath(synCtx);
@@ -475,6 +476,7 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
 
                     }
                     resource.process(synCtx);
+                    ExternalAnalyticsPublisher.publishApiAnalytics(synCtx);
                     return;
                 }
             }

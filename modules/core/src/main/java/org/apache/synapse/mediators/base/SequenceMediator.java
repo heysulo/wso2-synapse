@@ -32,6 +32,9 @@ import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
+import org.apache.synapse.elk.analytics.ElasticsearchAnalyticsPublisherThread;
+import org.apache.synapse.elk.analytics.ExternalAnalyticsPublisher;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -41,7 +44,10 @@ import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.Value;
+import org.json.JSONObject;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Stack;
 
 /**
@@ -70,6 +76,11 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     private String registryKey = null;
     /** The name of the file where this sequence is defined */
     private String fileName;
+
+    public SequenceType getSequenceType() {
+        return sequenceType;
+    }
+
     /** type of the sequence*/
     private SequenceType sequenceType = SequenceType.NAMED;
     /** Reference to the synapse environment */
@@ -93,7 +104,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
      * @return as per standard mediator result
      */
     public boolean mediate(MessageContext synCtx) {
-
+        Instant start = Instant.now();
         if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
                 return true;
@@ -193,6 +204,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 if (RuntimeStatisticCollector.isStatisticsEnabled()) {
                     reportCloseStatistics(synCtx, statisticReportingIndex);
                 }
+                ExternalAnalyticsPublisher.publishSequenceMediatorAnalytics(synCtx, this);
             }
 
         } else {
@@ -521,4 +533,6 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
             StatisticIdentityGenerator.reportingFlowContinuableEndEvent(sequenceId, ComponentType.SEQUENCE, holder);
         }
     }
+
+
 }

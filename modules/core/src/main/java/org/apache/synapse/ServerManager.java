@@ -23,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.config.SynapsePropertiesLoader;
+import org.apache.synapse.elk.analytics.ExternalAnalyticsPublisher;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.wso2.securevault.PasswordManager;
 import org.wso2.securevault.SecurityConstants;
@@ -111,6 +112,7 @@ public class ServerManager {
         doInit();
         initialized = true;
         RuntimeStatisticCollector.init();
+        ExternalAnalyticsPublisher.spawnServices();
 
         return this.serverContextInformation.getServerState();
     }
@@ -448,6 +450,8 @@ public class ServerManager {
             // if the server cannot be destroyed just set the current state as the server state
             changeState(serverState);
         }
+
+        ExternalAnalyticsPublisher.shutdownServices();
     }
 
     /**
