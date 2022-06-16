@@ -104,7 +104,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
      * @return as per standard mediator result
      */
     public boolean mediate(MessageContext synCtx) {
-        Instant start = Instant.now();
+        synCtx.recordLatency();
         if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
                 return true;

@@ -2,13 +2,14 @@ package org.apache.synapse.elk.analytics;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.api.API;
-import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.ProxyService;
-import org.apache.synapse.inbound.InboundEndpoint;
+import org.apache.synapse.endpoints.Endpoint;
+import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.rest.RESTConstants;
 import org.json.JSONObject;
@@ -107,22 +108,24 @@ public class ExternalAnalyticsPublisher {
         publishAnalytic(analytics);
     }
 
-    public static void publishInboundEndpointAnalytics(MessageContext synCtx) {
-        JSONObject analytics = generateAnalyticsObject(synCtx, InboundEndpoint.class);
+    public static void publishEndpointAnalytics(MessageContext synCtx, EndpointDefinition endpointDef) {
+        JSONObject analytics = generateAnalyticsObject(synCtx, Endpoint.class);
 
-        JSONObject inboundEndpointDetails = new JSONObject();
-        analytics.put("inboundEndpointDetails", inboundEndpointDetails);
+        JSONObject endpointDetails = new JSONObject();
+        endpointDetails.put("name", endpointDef.leafEndpoint.getName());
+        analytics.put("endpointDetails", endpointDetails);
 
         publishAnalytic(analytics);
     }
 
-    private static JSONObject generateAnalyticsObject(MessageContext synCtx, Class entityClass) {
+    private static JSONObject generateAnalyticsObject(MessageContext synCtx, Class<?> entityClass) {
         JSONObject analytics = new JSONObject();
         analytics.put("entityType", entityClass.getSimpleName());
         analytics.put("entityClassName", entityClass.getName());
         analytics.put("faultResponse", synCtx.isFaultResponse());
         analytics.put("messageId", synCtx.getMessageID());
-        analytics.put("latency", 0);
+        analytics.put("messageId", synCtx.getProperty(CorrelationConstants.CORRELATION_ID));
+        analytics.put("latency", synCtx.getLatency());
         return analytics;
     }
 }

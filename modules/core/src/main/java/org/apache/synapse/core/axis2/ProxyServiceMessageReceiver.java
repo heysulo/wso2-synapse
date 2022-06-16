@@ -103,6 +103,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         }
 
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
+        synCtx.recordLatency();
         Integer statisticReportingIndex = null;
         //Statistic reporting
         boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();

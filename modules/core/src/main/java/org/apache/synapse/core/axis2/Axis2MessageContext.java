@@ -43,6 +43,8 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.template.TemplateMediator;
 import org.apache.synapse.rest.RESTConstants;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 
 /**
@@ -76,6 +78,8 @@ public class Axis2MessageContext implements MessageContext {
      * Fault Handler stack which will be popped and called the handleFault in error states
      */
     private final Stack<FaultHandler> faultStack = new Stack<FaultHandler>();
+
+    private final Stack<Instant> latencyStack = new Stack<Instant>();
 
     /**
      * ContinuationState stack which is used to store ContinuationStates of mediation flow
@@ -696,5 +700,19 @@ public class Axis2MessageContext implements MessageContext {
     @Override
     public void setMessageFlowTracingState(int messageFlowTracingState) {
         this.messageFlowTracingState = messageFlowTracingState;
+    }
+
+    @Override
+    public void recordLatency() {
+        latencyStack.push(Instant.now());
+    }
+
+    @Override
+    public long getLatency() {
+        if (latencyStack.isEmpty()) {
+            return -1;
+        }
+
+        return Duration.between(latencyStack.pop(), Instant.now()).toMillis();
     }
 }

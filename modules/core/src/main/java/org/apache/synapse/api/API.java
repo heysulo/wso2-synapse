@@ -338,6 +338,7 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
 
     public void process(MessageContext synCtx) {
 
+        synCtx.recordLatency();
         auditDebug("Processing message with ID: " + synCtx.getMessageID() + " through the " +
                     "API: " + name);
         synCtx.setProperty(RESTConstants.PROCESSED_API, this);
