@@ -23,7 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.config.SynapsePropertiesLoader;
-import org.apache.synapse.elk.analytics.ExternalAnalyticsPublisher;
+import org.apache.synapse.analytics.ExternalAnalyticsPublisher;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.wso2.securevault.PasswordManager;
 import org.wso2.securevault.SecurityConstants;

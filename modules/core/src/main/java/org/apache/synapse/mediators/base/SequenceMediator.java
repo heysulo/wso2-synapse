@@ -32,9 +32,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
-import org.apache.synapse.elk.analytics.ElasticsearchAnalyticsPublisherThread;
-import org.apache.synapse.elk.analytics.ExternalAnalyticsPublisher;
-import org.apache.synapse.rest.RESTConstants;
+import org.apache.synapse.analytics.ExternalAnalyticsPublisher;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -44,10 +42,7 @@ import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.Value;
-import org.json.JSONObject;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Stack;
 
 /**

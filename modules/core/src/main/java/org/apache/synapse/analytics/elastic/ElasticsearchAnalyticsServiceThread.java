@@ -1,7 +1,8 @@
-package org.apache.synapse.elk.analytics;
+package org.apache.synapse.analytics.elastic;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.analytics.AbstractExternalAnalyticsServiceThread;
 import org.json.JSONObject;
 
 import java.time.Duration;
@@ -9,44 +10,45 @@ import java.time.Instant;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public final class ElasticsearchAnalyticsPublisherThread extends AbstractExternalAnalyticsService {
+public final class ElasticsearchAnalyticsServiceThread extends AbstractExternalAnalyticsServiceThread {
 
-    private static final Log log = LogFactory.getLog(ElasticsearchAnalyticsPublisherThread.class);
-    private static ElasticsearchAnalyticsPublisherThread instance = null;
+    private static final Log log = LogFactory.getLog(ElasticsearchAnalyticsServiceThread.class);
+    private static ElasticsearchAnalyticsServiceThread instance = null;
     private final String analyticsDataPrefix;
     private final Queue<JSONObject> analyticsQueue = new ConcurrentLinkedQueue<>();
     private final JSONObject analyticsEnvelope;
     private int maximumPublishRate;
 
-    private ElasticsearchAnalyticsPublisherThread() {
+    private ElasticsearchAnalyticsServiceThread() {
         this.maximumPublishRate = 1000; // TODO: Load from Synapse configuration
+        this.enabled = true;
         this.analyticsDataPrefix = "SYNAPSE_ANALYTICS_DATA";
         this.analyticsEnvelope = createAnalyticsEnvelop();
     }
 
-    public static ElasticsearchAnalyticsPublisherThread getInstance() {
+    public static ElasticsearchAnalyticsServiceThread getInstance() { //sync
         if (instance == null) {
-            instance = new ElasticsearchAnalyticsPublisherThread();
+            instance = new ElasticsearchAnalyticsServiceThread();
         }
         return instance;
     }
 
     private JSONObject createAnalyticsEnvelop() {
         JSONObject envelop = new JSONObject();
-        envelop.put(AnalyticsEnvelopConstants.METADATA, "TBA"); // TODO: Setup
+        envelop.put("metadata", "TBA"); // TODO: Setup
         return envelop;
     }
 
     @Override
     public void run() {
         log.info("Thread spawned.");
-        this.state = PublisherState.ACTIVE;
+        this.state = ServiceState.RUNNING;
         while (!this.isShuttingDown()) {
             Instant startTime = Instant.now();
             Instant endTime = null;
             int processedCountInLastSecond = 0;
 
-            while (processedCountInLastSecond < this.maximumPublishRate && this.isActive()) {
+            while (processedCountInLastSecond < this.maximumPublishRate && this.isRunning()) {
                 JSONObject analytic = this.analyticsQueue.poll();
                 if (analytic == null) {
                     endTime = Instant.now();
@@ -55,9 +57,9 @@ public final class ElasticsearchAnalyticsPublisherThread extends AbstractExterna
 
                 processedCountInLastSecond += 1;
                 Instant analyticTimestamp = Instant.now();
-                this.analyticsEnvelope.put(AnalyticsEnvelopConstants.TIMESTAMP, analyticTimestamp.toString());
-                this.analyticsEnvelope.put(AnalyticsEnvelopConstants.TIMESTAMP_EPOC, analyticTimestamp.toEpochMilli());
-                this.analyticsEnvelope.put(AnalyticsEnvelopConstants.PAYLOAD, analytic);
+                this.analyticsEnvelope.put("timestamp", analyticTimestamp.toString());
+                this.analyticsEnvelope.put("timestampEpoc", analyticTimestamp.toEpochMilli());
+                this.analyticsEnvelope.put("payload", analytic);
                 String logOutput = this.analyticsDataPrefix + " " + analyticsEnvelope;
                 log.info(logOutput);
                 if (Duration.between(startTime, Instant.now()).toMillis() > 1000) {
@@ -87,7 +89,7 @@ public final class ElasticsearchAnalyticsPublisherThread extends AbstractExterna
 
         }
 
-        if (this.state.equals(PublisherState.SHUTTING_DOWN)) {
+        if (this.state.equals(ServiceState.SHUTTING_DOWN)) {
             log.info("Shutting down thread");
         } else {
             log.warn("Thread is shutting down");
@@ -96,7 +98,7 @@ public final class ElasticsearchAnalyticsPublisherThread extends AbstractExterna
             log.warn(String.format("%d analytic(s) were discarded without publishing", this.analyticsQueue.size()));
             this.analyticsQueue.clear();
         }
-        this.state = PublisherState.NOT_RUNNING;
+        this.state = ServiceState.NOT_RUNNING;
     }
 
     public void setMaximumPublishRate(int rate) {
@@ -107,7 +109,7 @@ public final class ElasticsearchAnalyticsPublisherThread extends AbstractExterna
 
     @Override
     public void requestShutdown() {
-        log.debug("ElasticsearchAnalyticsPublisherThread shutdown requested from thread: "
+        log.debug("Thread shutdown requested from thread: "
                 + Thread.currentThread().getName());
         super.requestShutdown();
     }

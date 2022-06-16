@@ -1,15 +1,17 @@
-package org.apache.synapse.elk.analytics;
+package org.apache.synapse.analytics;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.analytics.elastic.ElasticsearchAnalyticsServiceThread;
 import org.apache.synapse.api.API;
+import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.rest.RESTConstants;
 import org.json.JSONObject;
@@ -19,16 +21,16 @@ import java.util.Collection;
 
 public class ExternalAnalyticsPublisher {
     private static final Log log = LogFactory.getLog(ExternalAnalyticsPublisher.class);
-    private static final Collection<AbstractExternalAnalyticsService> registeredServices = new ArrayList<>();
+    private static final Collection<AbstractExternalAnalyticsServiceThread> registeredServices = new ArrayList<>();
 
     public static void spawnServices() {
-        startService(ElasticsearchAnalyticsPublisherThread.getInstance());
+        startService(ElasticsearchAnalyticsServiceThread.getInstance());
     }
 
     public static void shutdownServices() {
         registeredServices.forEach(service -> {
             log.info(String.format("shutting down external analytics service %s", service.getClass().getSimpleName()));
-            if (service.isActive()) {
+            if (service.isRunning()) {
                 service.requestShutdown();
                 try {
                     service.join(1500);
@@ -39,7 +41,11 @@ public class ExternalAnalyticsPublisher {
         });
     }
 
-    private static void startService(AbstractExternalAnalyticsService service) {
+    private static void startService(AbstractExternalAnalyticsServiceThread service) {
+        if (!service.isEnabled()) {
+            return;
+        }
+
         log.info(String.format("Spawning external analytics service %s", service.getClass().getSimpleName()));
         registeredServices.add(service);
         service.start();
@@ -114,6 +120,17 @@ public class ExternalAnalyticsPublisher {
         JSONObject endpointDetails = new JSONObject();
         endpointDetails.put("name", endpointDef.leafEndpoint.getName());
         analytics.put("endpointDetails", endpointDetails);
+
+        publishAnalytic(analytics);
+    }
+
+    public static void publishInboundEndpointAnalytics(MessageContext synCtx, InboundEndpoint endpointDef) {
+        JSONObject analytics = generateAnalyticsObject(synCtx, InboundEndpoint.class);
+
+        JSONObject inboundEndpointDetails = new JSONObject();
+        inboundEndpointDetails.put("name", endpointDef.getName());
+        inboundEndpointDetails.put("protocol", endpointDef.getProtocol());
+        analytics.put("endpointDetails", inboundEndpointDetails);
 
         publishAnalytic(analytics);
     }
