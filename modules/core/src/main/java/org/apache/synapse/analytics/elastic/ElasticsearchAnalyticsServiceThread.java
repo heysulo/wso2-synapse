@@ -23,20 +23,14 @@ public final class ElasticsearchAnalyticsServiceThread extends AbstractExternalA
         this.maximumPublishRate = 1000; // TODO: Load from Synapse configuration
         this.enabled = true;
         this.analyticsDataPrefix = "SYNAPSE_ANALYTICS_DATA";
-        this.analyticsEnvelope = createAnalyticsEnvelop();
+        this.analyticsEnvelope = new JSONObject();
     }
 
-    public static ElasticsearchAnalyticsServiceThread getInstance() { //sync
+    public static synchronized ElasticsearchAnalyticsServiceThread getInstance() {
         if (instance == null) {
             instance = new ElasticsearchAnalyticsServiceThread();
         }
         return instance;
-    }
-
-    private JSONObject createAnalyticsEnvelop() {
-        JSONObject envelop = new JSONObject();
-        envelop.put("metadata", "TBA"); // TODO: Setup
-        return envelop;
     }
 
     @Override

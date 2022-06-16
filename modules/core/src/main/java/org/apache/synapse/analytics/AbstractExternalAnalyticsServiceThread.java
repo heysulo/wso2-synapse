@@ -15,7 +15,9 @@ public abstract class AbstractExternalAnalyticsServiceThread extends Thread {
         return this.state.equals(ServiceState.SHUTTING_DOWN);
     }
 
-    public boolean isEnabled() { return this.enabled; }
+    public boolean isEnabled() {
+        return this.enabled;
+    }
 
     public void requestShutdown() {
         this.state = ServiceState.SHUTTING_DOWN;
