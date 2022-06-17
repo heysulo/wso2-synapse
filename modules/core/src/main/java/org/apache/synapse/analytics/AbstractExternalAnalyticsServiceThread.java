@@ -8,7 +8,7 @@ public abstract class AbstractExternalAnalyticsServiceThread extends Thread {
     protected boolean enabled = false;
 
     public boolean isRunning() {
-        return this.state.equals(ServiceState.RUNNING);
+        return !this.state.equals(ServiceState.NOT_RUNNING);
     }
 
     public boolean isShuttingDown() {

@@ -16,14 +16,12 @@ public final class ElasticsearchAnalyticsServiceThread extends AbstractExternalA
     private static ElasticsearchAnalyticsServiceThread instance = null;
     private final String analyticsDataPrefix;
     private final Queue<JSONObject> analyticsQueue = new ConcurrentLinkedQueue<>();
-    private final JSONObject analyticsEnvelope;
     private int maximumPublishRate;
 
     private ElasticsearchAnalyticsServiceThread() {
         this.maximumPublishRate = 1000; // TODO: Load from Synapse configuration
         this.enabled = true;
         this.analyticsDataPrefix = "SYNAPSE_ANALYTICS_DATA";
-        this.analyticsEnvelope = new JSONObject();
     }
 
     public static synchronized ElasticsearchAnalyticsServiceThread getInstance() {
@@ -50,11 +48,7 @@ public final class ElasticsearchAnalyticsServiceThread extends AbstractExternalA
                 }
 
                 processedCountInLastSecond += 1;
-                Instant analyticTimestamp = Instant.now();
-                this.analyticsEnvelope.put("timestamp", analyticTimestamp.toString());
-                this.analyticsEnvelope.put("timestampEpoc", analyticTimestamp.toEpochMilli());
-                this.analyticsEnvelope.put("payload", analytic);
-                String logOutput = this.analyticsDataPrefix + " " + analyticsEnvelope;
+                String logOutput = this.analyticsDataPrefix + " " + analytic;
                 log.info(logOutput);
                 if (Duration.between(startTime, Instant.now()).toMillis() > 1000) {
                     log.debug(

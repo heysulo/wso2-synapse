@@ -112,7 +112,7 @@ public class ServerManager {
         doInit();
         initialized = true;
         RuntimeStatisticCollector.init();
-        ExternalAnalyticsPublisher.spawnServices();
+        ExternalAnalyticsPublisher.init(serverConfigurationInformation);
 
         return this.serverContextInformation.getServerState();
     }

@@ -2,28 +2,39 @@ package org.apache.synapse.analytics;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.SequenceType;
-import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.*;
 import org.apache.synapse.analytics.elastic.ElasticsearchAnalyticsServiceThread;
 import org.apache.synapse.api.API;
 import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.rest.RESTConstants;
+import org.apache.synapse.transport.netty.BridgeConstants;
 import org.json.JSONObject;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
+
+import static org.apache.synapse.transport.netty.BridgeConstants.REMOTE_HOST;
 
 public class ExternalAnalyticsPublisher {
     private static final Log log = LogFactory.getLog(ExternalAnalyticsPublisher.class);
     private static final Collection<AbstractExternalAnalyticsServiceThread> registeredServices = new ArrayList<>();
+    private static final JSONObject serverInfo = new JSONObject();
 
-    public static void spawnServices() {
+    public static synchronized void init(ServerConfigurationInformation serverInfo) {
+        ExternalAnalyticsPublisher.serverInfo.put("hostname", serverInfo.getHostName());
+        ExternalAnalyticsPublisher.serverInfo.put("serverName", serverInfo.getServerName());
+        ExternalAnalyticsPublisher.serverInfo.put("ipAddress", serverInfo.getIpAddress());
+        spawnServices();
+    }
+    private static void spawnServices() {
         startService(ElasticsearchAnalyticsServiceThread.getInstance());
     }
 
@@ -46,13 +57,29 @@ public class ExternalAnalyticsPublisher {
             return;
         }
 
+        if (service.isRunning()) {
+            log.warn(String.format("Cannot start external analytics service %s as it is already running",
+                    service.getClass().getSimpleName()));
+            return;
+        }
+
         log.info(String.format("Spawning external analytics service %s", service.getClass().getSimpleName()));
         registeredServices.add(service);
         service.start();
     }
 
-    public static void publishAnalytic(JSONObject data) {
-        registeredServices.forEach(service -> service.publish(data));
+    public static void publishAnalytic(JSONObject payload) {
+        Instant analyticTimestamp = Instant.now();
+        JSONObject analyticsEnvelope = new JSONObject();
+        analyticsEnvelope.put("timestamp", analyticTimestamp.toString());
+        analyticsEnvelope.put("serverInfo", serverInfo);
+        analyticsEnvelope.put("payload", payload);
+
+        registeredServices.forEach(service -> {
+            if (service.isEnabled()) {
+                service.publish(analyticsEnvelope);
+            }
+        });
     }
 
     public static void publishApiAnalytics(MessageContext synCtx) {
@@ -65,6 +92,7 @@ public class ExternalAnalyticsPublisher {
         apiDetails.put("method", synCtx.getProperty(RESTConstants.REST_METHOD));
         apiDetails.put("transport", synCtx.getProperty(SynapseConstants.TRANSPORT_IN_NAME));
         analytics.put("apiDetails", apiDetails);
+        attachHttpProperties(analytics, synCtx);
 
         publishAnalytic(analytics);
     }
@@ -110,6 +138,7 @@ public class ExternalAnalyticsPublisher {
         JSONObject proxyServiceDetails = new JSONObject();
         proxyServiceDetails.put("name", synCtx.getProperty(SynapseConstants.PROXY_SERVICE));
         analytics.put("proxyServiceDetails", proxyServiceDetails);
+        attachHttpProperties(analytics, synCtx);
 
         publishAnalytic(analytics);
     }
@@ -131,6 +160,7 @@ public class ExternalAnalyticsPublisher {
         inboundEndpointDetails.put("name", endpointDef.getName());
         inboundEndpointDetails.put("protocol", endpointDef.getProtocol());
         analytics.put("endpointDetails", inboundEndpointDetails);
+        attachHttpProperties(analytics, synCtx);
 
         publishAnalytic(analytics);
     }
@@ -141,8 +171,21 @@ public class ExternalAnalyticsPublisher {
         analytics.put("entityClassName", entityClass.getName());
         analytics.put("faultResponse", synCtx.isFaultResponse());
         analytics.put("messageId", synCtx.getMessageID());
-        analytics.put("messageId", synCtx.getProperty(CorrelationConstants.CORRELATION_ID));
+        analytics.put("correlation_id", synCtx.getProperty(CorrelationConstants.CORRELATION_ID));
         analytics.put("latency", synCtx.getLatency());
+        analytics.put("analyticsScope", "");
         return analytics;
+    }
+
+    private static void attachHttpProperties(JSONObject json, MessageContext synCtx) {
+
+        org.apache.axis2.context.MessageContext axisCtx = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+        if (axisCtx == null) {
+            return;
+        }
+
+        json.put("remoteHost", axisCtx.getProperty(BridgeConstants.REMOTE_HOST));
+        json.put("contentType", axisCtx.getProperty(BridgeConstants.CONTENT_TYPE_HEADER));
+        json.put("httpMethod", axisCtx.getProperty(BridgeConstants.HTTP_METHOD));
     }
 }
