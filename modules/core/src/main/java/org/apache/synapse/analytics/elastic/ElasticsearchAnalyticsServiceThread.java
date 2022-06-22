@@ -1,9 +1,9 @@
 package org.apache.synapse.analytics.elastic;
 
+import com.google.gson.JsonObject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.analytics.AbstractExternalAnalyticsServiceThread;
-import org.json.JSONObject;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -15,7 +15,7 @@ public final class ElasticsearchAnalyticsServiceThread extends AbstractExternalA
     private static final Log log = LogFactory.getLog(ElasticsearchAnalyticsServiceThread.class);
     private static ElasticsearchAnalyticsServiceThread instance = null;
     private final String analyticsDataPrefix;
-    private final Queue<JSONObject> analyticsQueue = new ConcurrentLinkedQueue<>();
+    private final Queue<JsonObject> analyticsQueue = new ConcurrentLinkedQueue<>();
     private int maximumPublishRate;
 
     private ElasticsearchAnalyticsServiceThread() {
@@ -41,14 +41,14 @@ public final class ElasticsearchAnalyticsServiceThread extends AbstractExternalA
             int processedCountInLastSecond = 0;
 
             while (processedCountInLastSecond < this.maximumPublishRate && this.isRunning()) {
-                JSONObject analytic = this.analyticsQueue.poll();
+                JsonObject analytic = this.analyticsQueue.poll();
                 if (analytic == null) {
                     endTime = Instant.now();
                     break;
                 }
 
                 processedCountInLastSecond += 1;
-                String logOutput = this.analyticsDataPrefix + " " + analytic;
+                String logOutput = this.analyticsDataPrefix + " " + analytic.toString();
                 log.info(logOutput);
                 if (Duration.between(startTime, Instant.now()).toMillis() > 1000) {
                     log.debug(
@@ -104,7 +104,7 @@ public final class ElasticsearchAnalyticsServiceThread extends AbstractExternalA
 
 
     @Override
-    public void publish(JSONObject data) {
+    public void publish(JsonObject data) {
         getInstance().analyticsQueue.offer(data);
     }
 

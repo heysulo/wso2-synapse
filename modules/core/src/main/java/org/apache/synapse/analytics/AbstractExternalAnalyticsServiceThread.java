@@ -1,6 +1,6 @@
 package org.apache.synapse.analytics;
 
-import org.json.JSONObject;
+import com.google.gson.JsonObject;
 
 public abstract class AbstractExternalAnalyticsServiceThread extends Thread {
 
@@ -23,7 +23,7 @@ public abstract class AbstractExternalAnalyticsServiceThread extends Thread {
         this.state = ServiceState.SHUTTING_DOWN;
     }
 
-    public abstract void publish(JSONObject data);
+    public abstract void publish(JsonObject data);
 
     protected enum ServiceState {
         NOT_RUNNING,

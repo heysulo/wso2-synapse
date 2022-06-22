@@ -81,6 +81,8 @@ public class Axis2MessageContext implements MessageContext {
 
     private final Stack<Instant> latencyStack = new Stack<Instant>();
 
+    private final Map<String, Object> externalAnalytics = new HashMap<String, Object>();
+
     /**
      * ContinuationState stack which is used to store ContinuationStates of mediation flow
      */
@@ -714,5 +716,18 @@ public class Axis2MessageContext implements MessageContext {
         }
 
         return Duration.between(latencyStack.pop(), Instant.now()).toMillis();
+    }
+
+    public void setExternalAnalyticData(String key, Object value) {
+        while (true) {
+            try {
+                this.externalAnalytics.put(key, value);
+                break;
+            } catch (ConcurrentModificationException ignored) {}
+        }
+    }
+
+    public Map<String, Object> getExternalAnalytics() {
+        return this.externalAnalytics;
     }
 }
