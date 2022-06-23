@@ -463,6 +463,7 @@ public OMElement getFormat(String key);
      * For each {@link #recordLatency()} method call there should be a corresponding {@link #getLatency()} method call
      */
     public default void recordLatency() {};
+
     /**
      * Calculates the time between the previous corresponding {@link #recordLatency()} method call and now. This should
      * be used with {@link #recordLatency()}

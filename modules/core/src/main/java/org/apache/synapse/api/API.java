@@ -402,7 +402,8 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
             }
 
             if (!proceed) {
-                return; // ???
+                synCtx.getLatency();
+                return;
             }
         }
 
@@ -417,7 +418,8 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
                 auditDebug("No resource information on the response: " + synCtx.getMessageID());
             }
 
-            return; // ???
+            synCtx.getLatency();
+            return;
         }
 
         String path = ApiUtils.getFullRequestPath(synCtx);
