@@ -1,12 +1,13 @@
 package org.apache.synapse.analytics;
 
 import com.google.gson.JsonObject;
-import org.apache.axiom.om.OMElement;
-import org.apache.axis2.util.JavaUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.*;
-import org.apache.synapse.analytics.elastic.ElasticsearchAnalyticsServiceThread;
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.SequenceType;
+import org.apache.synapse.ServerConfigurationInformation;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.analytics.elastic.ElasticsearchAnalyticsServiceTask;
 import org.apache.synapse.api.API;
 import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -23,11 +24,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
-import static org.apache.synapse.transport.netty.BridgeConstants.REMOTE_HOST;
-
 public class ExternalAnalyticsPublisher {
     private static final Log log = LogFactory.getLog(ExternalAnalyticsPublisher.class);
-    private static final Collection<AbstractExternalAnalyticsServiceThread> registeredServices = new ArrayList<>();
+    private static final Collection<AbstractExternalAnalyticsServiceTask> registeredServices = new ArrayList<>();
     private static final JsonObject serverInfo = new JsonObject();
 
     public static synchronized void init(ServerConfigurationInformation serverInfo) {
@@ -36,38 +35,25 @@ public class ExternalAnalyticsPublisher {
         ExternalAnalyticsPublisher.serverInfo.addProperty("ipAddress", serverInfo.getIpAddress());
         spawnServices();
     }
+
     private static void spawnServices() {
-        startService(ElasticsearchAnalyticsServiceThread.getInstance());
+        startService(ElasticsearchAnalyticsServiceTask.getInstance());
     }
 
     public static void shutdownServices() {
         registeredServices.forEach(service -> {
-            log.info(String.format("shutting down external analytics service %s", service.getClass().getSimpleName()));
-            if (service.isRunning()) {
-                service.requestShutdown();
-                try {
-                    service.join(1500);
-                } catch (InterruptedException e) {
-                    log.warn(String.format("Failed to gracefully shutdown %s", service.getClass().getSimpleName()));
-                }
-            }
+            log.info(String.format("Shutting down external analytics service %s", service.getClass().getSimpleName()));
+            service.shutdown();
         });
     }
 
-    private static void startService(AbstractExternalAnalyticsServiceThread service) {
+    private static void startService(AbstractExternalAnalyticsServiceTask service) {
         if (!service.isEnabled()) {
             return;
         }
-
-        if (service.isRunning()) {
-            log.warn(String.format("Cannot start external analytics service %s as it is already running",
-                    service.getClass().getSimpleName()));
-            return;
-        }
-
-        log.info(String.format("Spawning external analytics service %s", service.getClass().getSimpleName()));
+        log.info(String.format("Scheduling external analytics service %s", service.getClass().getSimpleName()));
+        service.schedule();
         registeredServices.add(service);
-        service.start();
     }
 
     public static void publishAnalytic(JsonObject payload) {
@@ -112,15 +98,15 @@ public class ExternalAnalyticsPublisher {
                 case API_INSEQ:
                 case API_OUTSEQ:
                 case API_FAULTSEQ:
-                    sequenceDetails.addProperty("apiContext", (String)synCtx.getProperty(RESTConstants.REST_API_CONTEXT));
-                    sequenceDetails.addProperty("api", (String)synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
-                    sequenceDetails.addProperty("subRequestPath", (String)synCtx.getProperty(RESTConstants.REST_SUB_REQUEST_PATH));
-                    sequenceDetails.addProperty("method", (String)synCtx.getProperty(RESTConstants.REST_METHOD));
+                    sequenceDetails.addProperty("apiContext", (String) synCtx.getProperty(RESTConstants.REST_API_CONTEXT));
+                    sequenceDetails.addProperty("api", (String) synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+                    sequenceDetails.addProperty("subRequestPath", (String) synCtx.getProperty(RESTConstants.REST_SUB_REQUEST_PATH));
+                    sequenceDetails.addProperty("method", (String) synCtx.getProperty(RESTConstants.REST_METHOD));
                     break;
                 case PROXY_INSEQ:
                 case PROXY_OUTSEQ:
                 case PROXY_FAULTSEQ:
-                    sequenceDetails.addProperty("proxyName", (String)synCtx.getProperty(SynapseConstants.PROXY_SERVICE));
+                    sequenceDetails.addProperty("proxyName", (String) synCtx.getProperty(SynapseConstants.PROXY_SERVICE));
                     break;
                 case ANON:
                     break;
@@ -189,17 +175,17 @@ public class ExternalAnalyticsPublisher {
                 customAnalytics.addProperty(entry.getKey(), (Boolean) value);
             } else if (value instanceof Double) {
                 customAnalytics.addProperty(entry.getKey(), (Double) value);
-            }else if (value instanceof Float) {
+            } else if (value instanceof Float) {
                 customAnalytics.addProperty(entry.getKey(), (Float) value);
-            }else if (value instanceof Integer) {
+            } else if (value instanceof Integer) {
                 customAnalytics.addProperty(entry.getKey(), (Integer) value);
-            }else if (value instanceof Long) {
+            } else if (value instanceof Long) {
                 customAnalytics.addProperty(entry.getKey(), (Long) value);
-            }else if (value instanceof Short) {
+            } else if (value instanceof Short) {
                 customAnalytics.addProperty(entry.getKey(), (Short) value);
-            }else if (value instanceof JsonObject) {
+            } else if (value instanceof JsonObject) {
                 customAnalytics.add(entry.getKey(), (JsonObject) value);
-            }else {
+            } else {
                 customAnalytics.addProperty(entry.getKey(), value.toString());
             }
         }
