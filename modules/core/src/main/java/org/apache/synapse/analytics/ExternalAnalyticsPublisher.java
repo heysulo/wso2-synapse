@@ -134,8 +134,8 @@ public class ExternalAnalyticsPublisher {
     public static void publishProxyServiceAnalytics(MessageContext synCtx) {
         JsonObject analytics = generateAnalyticsObject(synCtx, ProxyService.class);
         analytics.addProperty("transport", (String) synCtx.getProperty(SynapseConstants.TRANSPORT_IN_NAME));
-        analytics.addProperty("isClientDoingREST", (String) synCtx.getProperty(SynapseConstants.IS_CLIENT_DOING_REST));
-        analytics.addProperty("isClientDoingSOAP11", (String) synCtx.getProperty(SynapseConstants.IS_CLIENT_DOING_SOAP11));
+        analytics.addProperty("isClientDoingREST", (boolean) synCtx.getProperty(SynapseConstants.IS_CLIENT_DOING_REST));
+        analytics.addProperty("isClientDoingSOAP11", (boolean) synCtx.getProperty(SynapseConstants.IS_CLIENT_DOING_SOAP11));
 
         JsonObject proxyServiceDetails = new JsonObject();
         proxyServiceDetails.addProperty("name", (String) synCtx.getProperty(SynapseConstants.PROXY_SERVICE));
@@ -180,6 +180,10 @@ public class ExternalAnalyticsPublisher {
         Axis2MessageContext axis2mc = (Axis2MessageContext) synCtx;
         for (Map.Entry<String, Object> entry : axis2mc.getExternalAnalytics().entrySet()) {
             Object value = entry.getValue();
+
+            if (value == null) {
+                continue; // Logstash fails at null
+            }
 
             if (value instanceof Boolean) {
                 customAnalytics.addProperty(entry.getKey(), (Boolean) value);
