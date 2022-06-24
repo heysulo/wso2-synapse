@@ -54,7 +54,7 @@ public abstract class AbstractExternalAnalyticsServiceTask implements Runnable {
     /**
      * Start the Analytics Service
      */
-    public synchronized void schedule() {
+    public synchronized void start() {
         shuttingDown = false;
         serviceExecutor.scheduleAtFixedRate(this, 0, 1, TimeUnit.SECONDS);
     }

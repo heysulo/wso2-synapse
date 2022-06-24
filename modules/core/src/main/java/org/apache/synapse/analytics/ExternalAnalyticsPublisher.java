@@ -33,10 +33,10 @@ public class ExternalAnalyticsPublisher {
         ExternalAnalyticsPublisher.serverInfo.addProperty("hostname", serverInfo.getHostName());
         ExternalAnalyticsPublisher.serverInfo.addProperty("serverName", serverInfo.getServerName());
         ExternalAnalyticsPublisher.serverInfo.addProperty("ipAddress", serverInfo.getIpAddress());
-        spawnServices();
+        startExternalAnalyticServices();
     }
 
-    private static void spawnServices() {
+    private static void startExternalAnalyticServices() {
         startService(ElasticsearchAnalyticsServiceTask.getInstance());
     }
 
@@ -51,8 +51,8 @@ public class ExternalAnalyticsPublisher {
         if (!service.isEnabled()) {
             return;
         }
-        log.info(String.format("Scheduling external analytics service %s", service.getClass().getSimpleName()));
-        service.schedule();
+        log.info(String.format("Starting external analytics service %s", service.getClass().getSimpleName()));
+        service.start();
         registeredServices.add(service);
     }
 
