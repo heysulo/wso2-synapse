@@ -14,6 +14,7 @@ public abstract class AbstractExternalAnalyticsServiceTask implements Runnable {
 
     /**
      * Indicates if the Analytics Service is enabled or not
+     *
      * @return true, if enabled
      */
     public boolean isEnabled() {
@@ -22,6 +23,7 @@ public abstract class AbstractExternalAnalyticsServiceTask implements Runnable {
 
     /**
      * Publish an analytic through the service
+     *
      * @param data analytic data
      */
     public abstract void publish(JsonObject data);
@@ -45,6 +47,7 @@ public abstract class AbstractExternalAnalyticsServiceTask implements Runnable {
 
     /**
      * Indicates if the Analytics Service is shutting down or not
+     *
      * @return true, if shutting down
      */
     public boolean isShuttingDown() {

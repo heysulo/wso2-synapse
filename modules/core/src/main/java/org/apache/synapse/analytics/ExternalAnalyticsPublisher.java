@@ -10,6 +10,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.analytics.elastic.ElasticsearchAnalyticsServiceTask;
 import org.apache.synapse.api.API;
 import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.endpoints.Endpoint;
@@ -29,11 +30,34 @@ public class ExternalAnalyticsPublisher {
     private static final Collection<AbstractExternalAnalyticsServiceTask> registeredServices = new ArrayList<>();
     private static final JsonObject serverInfo = new JsonObject();
 
+    private static boolean analyticsDisabledForAPI;
+    private static boolean analyticsDisabledForSequences;
+    private static boolean analyticsDisabledForProxyServices;
+    private static boolean analyticsDisabledForEndpoints;
+    private static boolean analyticsDisabledForInboundEndpoints;
+    private static boolean namedSequencesOnly;
+
     public static synchronized void init(ServerConfigurationInformation serverInfo) {
         ExternalAnalyticsPublisher.serverInfo.addProperty("hostname", serverInfo.getHostName());
         ExternalAnalyticsPublisher.serverInfo.addProperty("serverName", serverInfo.getServerName());
         ExternalAnalyticsPublisher.serverInfo.addProperty("ipAddress", serverInfo.getIpAddress());
+        loadConfigurations();
         startExternalAnalyticServices();
+    }
+
+    private static void loadConfigurations() {
+        analyticsDisabledForAPI = SynapsePropertiesLoader.getBooleanProperty(
+                ExternalAnalyticsConstants.PUBLISHER_DISABLED_API, false);
+        analyticsDisabledForSequences = SynapsePropertiesLoader.getBooleanProperty(
+                ExternalAnalyticsConstants.PUBLISHER_DISABLED_SEQUENCES, false);
+        analyticsDisabledForProxyServices = SynapsePropertiesLoader.getBooleanProperty(
+                ExternalAnalyticsConstants.PUBLISHER_DISABLED_PROXY_SERVICE, false);
+        analyticsDisabledForEndpoints = SynapsePropertiesLoader.getBooleanProperty(
+                ExternalAnalyticsConstants.PUBLISHER_DISABLED_ENDPOINTS, false);
+        analyticsDisabledForInboundEndpoints = SynapsePropertiesLoader.getBooleanProperty(
+                ExternalAnalyticsConstants.PUBLISHER_DISABLED_INBOUND_ENDPOINTS, false);
+        namedSequencesOnly = SynapsePropertiesLoader.getBooleanProperty(
+                ExternalAnalyticsConstants.PUBLISHER_NAMED_SEQUENCES_ONLY, false);
     }
 
     private static void startExternalAnalyticServices() {
@@ -71,6 +95,10 @@ public class ExternalAnalyticsPublisher {
     }
 
     public static void publishApiAnalytics(MessageContext synCtx) {
+        if (analyticsDisabledForAPI) {
+            return;
+        }
+
         JsonObject analytics = generateAnalyticsObject(synCtx, API.class);
 
         JsonObject apiDetails = new JsonObject();
@@ -86,6 +114,14 @@ public class ExternalAnalyticsPublisher {
     }
 
     public static void publishSequenceMediatorAnalytics(MessageContext synCtx, SequenceMediator sequence) {
+        if (analyticsDisabledForSequences) {
+            return;
+        }
+
+        if (namedSequencesOnly && !SequenceType.NAMED.equals(sequence.getSequenceType())) {
+            return;
+        }
+
         JsonObject analytics = generateAnalyticsObject(synCtx, SequenceMediator.class);
 
         JsonObject sequenceDetails = new JsonObject();
@@ -118,7 +154,12 @@ public class ExternalAnalyticsPublisher {
     }
 
     public static void publishProxyServiceAnalytics(MessageContext synCtx) {
+        if (analyticsDisabledForProxyServices) {
+            return;
+        }
+
         JsonObject analytics = generateAnalyticsObject(synCtx, ProxyService.class);
+
         analytics.addProperty("transport", (String) synCtx.getProperty(SynapseConstants.TRANSPORT_IN_NAME));
         analytics.addProperty("isClientDoingREST", (boolean) synCtx.getProperty(SynapseConstants.IS_CLIENT_DOING_REST));
         analytics.addProperty("isClientDoingSOAP11", (boolean) synCtx.getProperty(SynapseConstants.IS_CLIENT_DOING_SOAP11));
@@ -132,6 +173,10 @@ public class ExternalAnalyticsPublisher {
     }
 
     public static void publishEndpointAnalytics(MessageContext synCtx, EndpointDefinition endpointDef) {
+        if (analyticsDisabledForEndpoints) {
+            return;
+        }
+
         JsonObject analytics = generateAnalyticsObject(synCtx, Endpoint.class);
 
         JsonObject endpointDetails = new JsonObject();
@@ -142,6 +187,10 @@ public class ExternalAnalyticsPublisher {
     }
 
     public static void publishInboundEndpointAnalytics(MessageContext synCtx, InboundEndpoint endpointDef) {
+        if (analyticsDisabledForInboundEndpoints) {
+            return;
+        }
+
         JsonObject analytics = generateAnalyticsObject(synCtx, InboundEndpoint.class);
 
         JsonObject inboundEndpointDetails = new JsonObject();

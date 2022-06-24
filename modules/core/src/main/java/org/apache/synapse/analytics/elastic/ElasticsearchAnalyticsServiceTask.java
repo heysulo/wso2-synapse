@@ -4,6 +4,8 @@ import com.google.gson.JsonObject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.analytics.AbstractExternalAnalyticsServiceTask;
+import org.apache.synapse.analytics.ExternalAnalyticsConstants;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -12,14 +14,13 @@ public final class ElasticsearchAnalyticsServiceTask extends AbstractExternalAna
 
     private static final Log log = LogFactory.getLog(ElasticsearchAnalyticsServiceTask.class);
     private static ElasticsearchAnalyticsServiceTask instance = null;
-    private final String analyticsDataPrefix;
     private final Queue<JsonObject> analyticsQueue = new ConcurrentLinkedQueue<>();
+    private String analyticsDataPrefix;
     private int maximumPublishRate;
+    private int maximumQueueSize;
 
     private ElasticsearchAnalyticsServiceTask() {
-        setMaximumPublishRate(1000); // TODO: Load from Synapse configuration
-        this.enabled = true;
-        this.analyticsDataPrefix = "SYNAPSE_ANALYTICS_DATA";
+        loadConfigurations();
     }
 
     public static synchronized ElasticsearchAnalyticsServiceTask getInstance() {
@@ -27,6 +28,17 @@ public final class ElasticsearchAnalyticsServiceTask extends AbstractExternalAna
             instance = new ElasticsearchAnalyticsServiceTask();
         }
         return instance;
+    }
+
+    private void loadConfigurations() {
+        this.maximumPublishRate = SynapsePropertiesLoader.getIntegerProperty(
+                ExternalAnalyticsConstants.ELASTICSEARCH_MAX_PUBLISH_RATE, 100000);
+        this.maximumQueueSize = SynapsePropertiesLoader.getIntegerProperty(
+                ExternalAnalyticsConstants.ELASTICSEARCH_QUEUE_SIZE, Integer.MAX_VALUE - 1);
+        this.enabled = SynapsePropertiesLoader.getBooleanProperty(
+                ExternalAnalyticsConstants.ELASTICSEARCH_ENABLED, false);
+        this.analyticsDataPrefix = SynapsePropertiesLoader.getPropertyValue(
+                ExternalAnalyticsConstants.ELASTICSEARCH_PREFIX, "SYNAPSE_ANALYTICS_DATA");
     }
 
     @Override
@@ -44,15 +56,15 @@ public final class ElasticsearchAnalyticsServiceTask extends AbstractExternalAna
         }
     }
 
-    public void setMaximumPublishRate(int rate) {
-        this.maximumPublishRate = rate;
-    }
-
 
     @Override
     public void publish(JsonObject data) {
         if (isShuttingDown() || !isEnabled()) {
             return;
+        }
+
+        if (this.analyticsQueue.size() >= this.maximumQueueSize) {
+            log.warn("Discarding analytic data. Maximum queue size reached");
         }
 
         this.analyticsQueue.offer(data);
