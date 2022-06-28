@@ -7,6 +7,8 @@ import org.apache.synapse.analytics.AbstractExternalAnalyticsServiceTask;
 import org.apache.synapse.analytics.ExternalAnalyticsConstants;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -44,7 +46,8 @@ public final class ElasticsearchAnalyticsServiceTask extends AbstractExternalAna
     @Override
     public void run() {
         int processedAnalyticsCount = 0;
-        while (processedAnalyticsCount < this.maximumPublishRate || shuttingDown) {
+        Instant start = Instant.now();
+        while (processedAnalyticsCount < this.maximumPublishRate || isShuttingDown()) {
             JsonObject analytic = this.analyticsQueue.poll();
             if (analytic == null) {
                 break;
@@ -53,6 +56,10 @@ public final class ElasticsearchAnalyticsServiceTask extends AbstractExternalAna
             ++processedAnalyticsCount;
             String logOutput = this.analyticsDataPrefix + " " + analytic;
             log.info(logOutput);
+
+            if (!isShuttingDown() && Duration.between(start, Instant.now()).toMillis() > 1000 ) {
+                break;
+            }
         }
     }
 

@@ -38,11 +38,15 @@ public class ExternalAnalyticsPublisher {
     private static boolean namedSequencesOnly;
 
     public static synchronized void init(ServerConfigurationInformation serverInfo) {
+        prepareServerMetadata(serverInfo);
+        loadConfigurations();
+        startExternalAnalyticServices();
+    }
+
+    private static void prepareServerMetadata(ServerConfigurationInformation serverInfo) {
         ExternalAnalyticsPublisher.serverInfo.addProperty("hostname", serverInfo.getHostName());
         ExternalAnalyticsPublisher.serverInfo.addProperty("serverName", serverInfo.getServerName());
         ExternalAnalyticsPublisher.serverInfo.addProperty("ipAddress", serverInfo.getIpAddress());
-        loadConfigurations();
-        startExternalAnalyticServices();
     }
 
     private static void loadConfigurations() {
@@ -80,7 +84,7 @@ public class ExternalAnalyticsPublisher {
         registeredServices.add(service);
     }
 
-    public static void publishAnalytic(JsonObject payload) {
+    private static void publishAnalytic(JsonObject payload) {
         Instant analyticTimestamp = Instant.now();
         JsonObject analyticsEnvelope = new JsonObject();
         analyticsEnvelope.addProperty("timestamp", analyticTimestamp.toString());
