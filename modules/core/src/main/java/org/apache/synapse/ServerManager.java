@@ -451,7 +451,6 @@ public class ServerManager {
             changeState(serverState);
         }
 
-        ExternalAnalyticsPublisher.shutdownServices();
     }
 
     /**

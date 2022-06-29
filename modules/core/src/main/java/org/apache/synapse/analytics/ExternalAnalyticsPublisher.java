@@ -7,7 +7,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SequenceType;
 import org.apache.synapse.ServerConfigurationInformation;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.analytics.elastic.ElasticsearchAnalyticsServiceTask;
+import org.apache.synapse.analytics.elastic.ElasticsearchAnalyticsService;
 import org.apache.synapse.api.API;
 import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.config.SynapsePropertiesLoader;
@@ -27,7 +27,7 @@ import java.util.Map;
 
 public class ExternalAnalyticsPublisher {
     private static final Log log = LogFactory.getLog(ExternalAnalyticsPublisher.class);
-    private static final Collection<AbstractExternalAnalyticsServiceTask> registeredServices = new ArrayList<>();
+    private static final Collection<AbstractExternalAnalyticsService> registeredServices = new ArrayList<>();
     private static final JsonObject serverInfo = new JsonObject();
 
     private static boolean analyticsDisabledForAPI;
@@ -65,22 +65,14 @@ public class ExternalAnalyticsPublisher {
     }
 
     private static void startExternalAnalyticServices() {
-        startService(ElasticsearchAnalyticsServiceTask.getInstance());
+        startService(ElasticsearchAnalyticsService.getInstance());
     }
 
-    public static void shutdownServices() {
-        registeredServices.forEach(service -> {
-            log.info(String.format("Shutting down external analytics service %s", service.getClass().getSimpleName()));
-            service.shutdown();
-        });
-    }
-
-    private static void startService(AbstractExternalAnalyticsServiceTask service) {
+    private static void startService(AbstractExternalAnalyticsService service) {
         if (!service.isEnabled()) {
             return;
         }
-        log.info(String.format("Starting external analytics service %s", service.getClass().getSimpleName()));
-        service.start();
+        log.info(String.format("Enabling external analytics service %s", service.getClass().getSimpleName()));
         registeredServices.add(service);
     }
 
