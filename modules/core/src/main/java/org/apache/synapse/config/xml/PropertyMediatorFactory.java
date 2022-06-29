@@ -149,7 +149,7 @@ public class PropertyMediatorFactory extends AbstractMediatorFactory {
             String valueStr = scope.getAttributeValue();
             if (!XMLConfigConstants.SCOPE_AXIS2.equals(valueStr) &&
                     !XMLConfigConstants.SCOPE_TRANSPORT.equals(valueStr) &&
-                    !XMLConfigConstants.SCOPE_EXTERNAL_ANALYTICS.equals(valueStr) &&
+                    !XMLConfigConstants.SCOPE_ANALYTICS.equals(valueStr) &&
                     !XMLConfigConstants.SCOPE_OPERATION.equals(valueStr) &&
                     !XMLConfigConstants.SCOPE_DEFAULT.equals(valueStr) &&
                     !XMLConfigConstants.SCOPE_CLIENT.equals(valueStr) &&

@@ -85,7 +85,7 @@ public class Axis2MessageContext implements MessageContext {
     private final Stack<Instant> latencyStack = new Stack<Instant>();
 
     /**
-     * Maintains data which needs to be published with analytics ExternalAnalyticsPublisher
+     * Maintains data which needs to be published with analytics AnalyticsPublisher
      */
     private final Map<String, Object> analyticsMetadata = new HashMap<String, Object>();
 
