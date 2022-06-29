@@ -33,7 +33,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.commons.CorrelationConstants;
-import org.apache.synapse.analytics.ExternalAnalyticsPublisher;
+import org.apache.synapse.analytics.AnalyticsPublisher;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -273,7 +273,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
                 debugManager.releaseMediationFlowLock();
             }
             doPostInjectUpdates(synCtx);
-            ExternalAnalyticsPublisher.publishProxyServiceAnalytics(synCtx);
+            AnalyticsPublisher.publishProxyServiceAnalytics(synCtx);
         }
     }
 

@@ -25,9 +25,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
-public class ExternalAnalyticsPublisher {
-    private static final Log log = LogFactory.getLog(ExternalAnalyticsPublisher.class);
-    private static final Collection<AbstractExternalAnalyticsService> registeredServices = new ArrayList<>();
+public class AnalyticsPublisher {
+    private static final Log log = LogFactory.getLog(AnalyticsPublisher.class);
+    private static final Collection<AbstractAnalyticsService> registeredServices = new ArrayList<>();
     private static final JsonObject serverInfo = new JsonObject();
 
     private static boolean analyticsDisabledForAPI;
@@ -40,39 +40,39 @@ public class ExternalAnalyticsPublisher {
     public static synchronized void init(ServerConfigurationInformation serverInfo) {
         prepareServerMetadata(serverInfo);
         loadConfigurations();
-        startExternalAnalyticServices();
+        startAnalyticServices();
     }
 
     private static void prepareServerMetadata(ServerConfigurationInformation serverInfo) {
-        ExternalAnalyticsPublisher.serverInfo.addProperty("hostname", serverInfo.getHostName());
-        ExternalAnalyticsPublisher.serverInfo.addProperty("serverName", serverInfo.getServerName());
-        ExternalAnalyticsPublisher.serverInfo.addProperty("ipAddress", serverInfo.getIpAddress());
+        AnalyticsPublisher.serverInfo.addProperty("hostname", serverInfo.getHostName());
+        AnalyticsPublisher.serverInfo.addProperty("serverName", serverInfo.getServerName());
+        AnalyticsPublisher.serverInfo.addProperty("ipAddress", serverInfo.getIpAddress());
     }
 
     private static void loadConfigurations() {
         analyticsDisabledForAPI = SynapsePropertiesLoader.getBooleanProperty(
-                ExternalAnalyticsConstants.PUBLISHER_DISABLED_API, false);
+                AnalyticsConstants.PUBLISHER_DISABLED_API, false);
         analyticsDisabledForSequences = SynapsePropertiesLoader.getBooleanProperty(
-                ExternalAnalyticsConstants.PUBLISHER_DISABLED_SEQUENCES, false);
+                AnalyticsConstants.PUBLISHER_DISABLED_SEQUENCES, false);
         analyticsDisabledForProxyServices = SynapsePropertiesLoader.getBooleanProperty(
-                ExternalAnalyticsConstants.PUBLISHER_DISABLED_PROXY_SERVICE, false);
+                AnalyticsConstants.PUBLISHER_DISABLED_PROXY_SERVICE, false);
         analyticsDisabledForEndpoints = SynapsePropertiesLoader.getBooleanProperty(
-                ExternalAnalyticsConstants.PUBLISHER_DISABLED_ENDPOINTS, false);
+                AnalyticsConstants.PUBLISHER_DISABLED_ENDPOINTS, false);
         analyticsDisabledForInboundEndpoints = SynapsePropertiesLoader.getBooleanProperty(
-                ExternalAnalyticsConstants.PUBLISHER_DISABLED_INBOUND_ENDPOINTS, false);
+                AnalyticsConstants.PUBLISHER_DISABLED_INBOUND_ENDPOINTS, false);
         namedSequencesOnly = SynapsePropertiesLoader.getBooleanProperty(
-                ExternalAnalyticsConstants.PUBLISHER_NAMED_SEQUENCES_ONLY, false);
+                AnalyticsConstants.PUBLISHER_NAMED_SEQUENCES_ONLY, false);
     }
 
-    private static void startExternalAnalyticServices() {
+    private static void startAnalyticServices() {
         startService(ElasticsearchAnalyticsService.getInstance());
     }
 
-    private static void startService(AbstractExternalAnalyticsService service) {
+    private static void startService(AbstractAnalyticsService service) {
         if (!service.isEnabled()) {
             return;
         }
-        log.info(String.format("Enabling external analytics service %s", service.getClass().getSimpleName()));
+        log.info(String.format("Enabling analytics service %s", service.getClass().getSimpleName()));
         registeredServices.add(service);
     }
 
@@ -209,7 +209,7 @@ public class ExternalAnalyticsPublisher {
 
         JsonObject customAnalytics = new JsonObject();
         Axis2MessageContext axis2mc = (Axis2MessageContext) synCtx;
-        for (Map.Entry<String, Object> entry : axis2mc.getExternalAnalytics().entrySet()) {
+        for (Map.Entry<String, Object> entry : axis2mc.getAnalyticsMetadata().entrySet()) {
             Object value = entry.getValue();
 
             if (value == null) {

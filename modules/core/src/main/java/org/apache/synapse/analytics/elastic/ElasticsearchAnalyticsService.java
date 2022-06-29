@@ -3,11 +3,11 @@ package org.apache.synapse.analytics.elastic;
 import com.google.gson.JsonObject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.analytics.AbstractExternalAnalyticsService;
-import org.apache.synapse.analytics.ExternalAnalyticsConstants;
+import org.apache.synapse.analytics.AbstractAnalyticsService;
+import org.apache.synapse.analytics.AnalyticsConstants;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 
-public final class ElasticsearchAnalyticsService extends AbstractExternalAnalyticsService {
+public final class ElasticsearchAnalyticsService extends AbstractAnalyticsService {
 
     private static final Log log = LogFactory.getLog(ElasticsearchAnalyticsService.class);
     private static ElasticsearchAnalyticsService instance = null;
@@ -26,9 +26,9 @@ public final class ElasticsearchAnalyticsService extends AbstractExternalAnalyti
 
     private void loadConfigurations() {
         this.enabled = SynapsePropertiesLoader.getBooleanProperty(
-                ExternalAnalyticsConstants.ELASTICSEARCH_ENABLED, false);
+                AnalyticsConstants.ELASTICSEARCH_ENABLED, false);
         this.analyticsDataPrefix = SynapsePropertiesLoader.getPropertyValue(
-                ExternalAnalyticsConstants.ELASTICSEARCH_PREFIX, "SYNAPSE_ANALYTICS_DATA");
+                AnalyticsConstants.ELASTICSEARCH_PREFIX, "SYNAPSE_ANALYTICS_DATA");
     }
 
     @Override

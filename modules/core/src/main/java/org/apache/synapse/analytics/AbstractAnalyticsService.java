@@ -2,7 +2,7 @@ package org.apache.synapse.analytics;
 
 import com.google.gson.JsonObject;
 
-public abstract class AbstractExternalAnalyticsService {
+public abstract class AbstractAnalyticsService {
 
     protected boolean enabled = false;
 

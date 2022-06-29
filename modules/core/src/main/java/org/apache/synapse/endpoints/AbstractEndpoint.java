@@ -39,7 +39,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCol
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
-import org.apache.synapse.analytics.ExternalAnalyticsPublisher;
+import org.apache.synapse.analytics.AnalyticsPublisher;
 import org.apache.synapse.transport.util.MessageHandlerProvider;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
@@ -416,7 +416,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
                     statisticReportingIndex, false);
         }
 
-        ExternalAnalyticsPublisher.publishEndpointAnalytics(synCtx, definition);
+        AnalyticsPublisher.publishEndpointAnalytics(synCtx, definition);
     }
 
     /**

@@ -38,7 +38,7 @@ import org.apache.synapse.api.dispatch.RESTDispatcher;
 import org.apache.synapse.api.version.DefaultStrategy;
 import org.apache.synapse.api.version.URLBasedVersionStrategy;
 import org.apache.synapse.api.version.VersionStrategy;
-import org.apache.synapse.analytics.ExternalAnalyticsPublisher;
+import org.apache.synapse.analytics.AnalyticsPublisher;
 import org.apache.synapse.rest.Handler;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
@@ -476,7 +476,7 @@ public class API extends AbstractRequestProcessor implements ManagedLifecycle, A
 
                     }
                     resource.process(synCtx);
-                    ExternalAnalyticsPublisher.publishApiAnalytics(synCtx);
+                    AnalyticsPublisher.publishApiAnalytics(synCtx);
                     return;
                 }
             }

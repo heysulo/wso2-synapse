@@ -37,7 +37,7 @@ import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
-import org.apache.synapse.analytics.ExternalAnalyticsPublisher;
+import org.apache.synapse.analytics.AnalyticsPublisher;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
@@ -1131,7 +1131,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                 CloseEventCollector.tryEndFlow(smc, inboundName, ComponentType.INBOUNDENDPOINT,
                         statisticReportingIndex, false);
             }
-            ExternalAnalyticsPublisher.publishInboundEndpointAnalytics(smc, inboundEndpoint);
+            AnalyticsPublisher.publishInboundEndpointAnalytics(smc, inboundEndpoint);
         }
     }
 

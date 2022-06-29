@@ -247,7 +247,7 @@ public class PropertyMediator extends AbstractMediator {
                 && synCtx instanceof Axis2MessageContext) {
                 Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
                 if (resultValue != null ) {
-                    axis2smc.setExternalAnalyticData(name, resultValue);
+                    axis2smc.setAnalyticsMetadata(name, resultValue);
                 }
             }
 

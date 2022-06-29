@@ -87,7 +87,7 @@ public class Axis2MessageContext implements MessageContext {
     /**
      * Maintains data which needs to be published with analytics ExternalAnalyticsPublisher
      */
-    private final Map<String, Object> externalAnalytics = new HashMap<String, Object>();
+    private final Map<String, Object> analyticsMetadata = new HashMap<String, Object>();
 
     /**
      * ContinuationState stack which is used to store ContinuationStates of mediation flow
@@ -724,16 +724,16 @@ public class Axis2MessageContext implements MessageContext {
         return Duration.between(latencyStack.pop(), Instant.now()).toMillis();
     }
 
-    public void setExternalAnalyticData(String key, Object value) {
+    public void setAnalyticsMetadata(String key, Object value) {
         while (true) {
             try {
-                this.externalAnalytics.put(key, value);
+                this.analyticsMetadata.put(key, value);
                 break;
             } catch (ConcurrentModificationException ignored) {}
         }
     }
 
-    public Map<String, Object> getExternalAnalytics() {
-        return this.externalAnalytics;
+    public Map<String, Object> getAnalyticsMetadata() {
+        return this.analyticsMetadata;
     }
 }
