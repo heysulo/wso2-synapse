@@ -3,6 +3,17 @@ package org.apache.synapse.analytics;
 public class AnalyticsConstants {
 
     /**
+     * Schema version of the analytic
+     */
+    public static final int SCHEMA_VERSION = 1;
+
+    /**
+     * Unique identifier for the publisher that can be used to filter analytics if multiple micro integrators are
+     * publishing data to the same Elasticsearch server
+     */
+    public static final String PUBLISHER_IDENTIFIER = "analytics.publisher.id";
+
+    /**
      * Name of the Synapse configuration used to determine if analytics for APIs are disabled
      */
     public static final String PUBLISHER_DISABLED_API = "analytics.publisher.api.disabled";

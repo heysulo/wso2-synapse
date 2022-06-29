@@ -47,6 +47,10 @@ public class AnalyticsPublisher {
         AnalyticsPublisher.serverInfo.addProperty("hostname", serverInfo.getHostName());
         AnalyticsPublisher.serverInfo.addProperty("serverName", serverInfo.getServerName());
         AnalyticsPublisher.serverInfo.addProperty("ipAddress", serverInfo.getIpAddress());
+
+        String publisherId = SynapsePropertiesLoader.getPropertyValue(
+                AnalyticsConstants.PUBLISHER_IDENTIFIER, serverInfo.getHostName());
+        AnalyticsPublisher.serverInfo.addProperty("publisherId", publisherId);
     }
 
     private static void loadConfigurations() {
@@ -80,6 +84,7 @@ public class AnalyticsPublisher {
         Instant analyticTimestamp = Instant.now();
         JsonObject analyticsEnvelope = new JsonObject();
         analyticsEnvelope.addProperty("timestamp", analyticTimestamp.toString());
+        analyticsEnvelope.addProperty("schemaVersion", AnalyticsConstants.SCHEMA_VERSION);
         analyticsEnvelope.add("serverInfo", serverInfo);
         analyticsEnvelope.add("payload", payload);
 
