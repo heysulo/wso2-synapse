@@ -47,10 +47,10 @@ public class AnalyticsConstants {
      * Name of the Synapse configuration used to determine the prefix Elasticsearch analytics are published with.
      * The purpose of this prefix is to distinguish log lines which hold analytics data from others
      */
-    public static final String ELASTICSEARCH_PREFIX = "analytics.elasticsearch.prefix";
+    public static final String ELASTICSEARCH_PREFIX = "analytics.service.elasticsearch.prefix";
 
     /**
      * Name of the Synapse configuration used to determine if the Elasticsearch service is enabled
      */
-    public static final String ELASTICSEARCH_ENABLED = "analytics.elasticsearch.enabled";
+    public static final String ELASTICSEARCH_ENABLED = "analytics.service.elasticsearch.enabled";
 }
