@@ -212,7 +212,7 @@ public class AnalyticsPublisher {
         analytics.addProperty("correlation_id", (String) synCtx.getProperty(CorrelationConstants.CORRELATION_ID));
         analytics.addProperty("latency", synCtx.getLatency());
 
-        JsonObject customAnalytics = new JsonObject();
+        JsonObject metadata = new JsonObject();
         Axis2MessageContext axis2mc = (Axis2MessageContext) synCtx;
         for (Map.Entry<String, Object> entry : axis2mc.getAnalyticsMetadata().entrySet()) {
             Object value = entry.getValue();
@@ -222,25 +222,25 @@ public class AnalyticsPublisher {
             }
 
             if (value instanceof Boolean) {
-                customAnalytics.addProperty(entry.getKey(), (Boolean) value);
+                metadata.addProperty(entry.getKey(), (Boolean) value);
             } else if (value instanceof Double) {
-                customAnalytics.addProperty(entry.getKey(), (Double) value);
+                metadata.addProperty(entry.getKey(), (Double) value);
             } else if (value instanceof Float) {
-                customAnalytics.addProperty(entry.getKey(), (Float) value);
+                metadata.addProperty(entry.getKey(), (Float) value);
             } else if (value instanceof Integer) {
-                customAnalytics.addProperty(entry.getKey(), (Integer) value);
+                metadata.addProperty(entry.getKey(), (Integer) value);
             } else if (value instanceof Long) {
-                customAnalytics.addProperty(entry.getKey(), (Long) value);
+                metadata.addProperty(entry.getKey(), (Long) value);
             } else if (value instanceof Short) {
-                customAnalytics.addProperty(entry.getKey(), (Short) value);
+                metadata.addProperty(entry.getKey(), (Short) value);
             } else if (value instanceof JsonObject) {
-                customAnalytics.add(entry.getKey(), (JsonObject) value);
+                metadata.add(entry.getKey(), (JsonObject) value);
             } else {
-                customAnalytics.addProperty(entry.getKey(), value.toString());
+                metadata.addProperty(entry.getKey(), value.toString());
             }
         }
 
-        analytics.add("customAnalytics", customAnalytics);
+        analytics.add("metadata", metadata);
         return analytics;
     }
 
