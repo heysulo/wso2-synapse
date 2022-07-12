@@ -3,16 +3,16 @@ package org.apache.synapse.analytics.elastic;
 import com.google.gson.JsonObject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.analytics.AnalyticsService;
 import org.apache.synapse.analytics.AnalyticsConstants;
+import org.apache.synapse.analytics.AnalyticsService;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 
 public final class ElasticsearchAnalyticsService implements AnalyticsService {
 
     private static final Log log = LogFactory.getLog(ElasticsearchAnalyticsService.class);
     private static ElasticsearchAnalyticsService instance = null;
-    private String analyticsDataPrefix;
     boolean enabled = false;
+    private String analyticsDataPrefix;
 
     private ElasticsearchAnalyticsService() {
         loadConfigurations();

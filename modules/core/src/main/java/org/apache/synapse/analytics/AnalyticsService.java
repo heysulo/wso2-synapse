@@ -9,13 +9,13 @@ public interface AnalyticsService {
      *
      * @return true, if enabled
      */
-    public boolean isEnabled();
+    boolean isEnabled();
 
     /**
      * Publish an analytic through the service
      *
      * @param data analytic data
      */
-    public void publish(JsonObject data);
+    void publish(JsonObject data);
 
 }
