@@ -90,7 +90,7 @@ public class AnalyticsPublisher {
         }
     }
 
-    private static void publishAnalytic(JsonObject payload) {
+    public static void publishAnalytic(JsonObject payload) {
         Instant analyticTimestamp = Instant.now();
         JsonObject analyticsEnvelope = new JsonObject();
         analyticsEnvelope.addProperty("timestamp", analyticTimestamp.toString());
