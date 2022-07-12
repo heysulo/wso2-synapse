@@ -27,7 +27,7 @@ import java.util.Map;
 
 public class AnalyticsPublisher {
     private static final Log log = LogFactory.getLog(AnalyticsPublisher.class);
-    private static final Collection<AbstractAnalyticsService> registeredServices = new ArrayList<>();
+    private static final Collection<AnalyticsService> registeredServices = new ArrayList<>();
     private static final JsonObject serverInfo = new JsonObject();
 
     private static boolean analyticsDisabledForAPI;
@@ -40,7 +40,7 @@ public class AnalyticsPublisher {
     public static synchronized void init(ServerConfigurationInformation serverInfo) {
         prepareServerMetadata(serverInfo);
         loadConfigurations();
-        startAnalyticServices();
+        prepareAnalyticServices();
     }
 
     private static void prepareServerMetadata(ServerConfigurationInformation serverInfo) {
@@ -68,16 +68,26 @@ public class AnalyticsPublisher {
                 AnalyticsConstants.PUBLISHER_NAMED_SEQUENCES_ONLY, false);
     }
 
-    private static void startAnalyticServices() {
-        startService(ElasticsearchAnalyticsService.getInstance());
+    private static void prepareAnalyticServices() {
+        registerService(ElasticsearchAnalyticsService.getInstance());
     }
 
-    private static void startService(AbstractAnalyticsService service) {
+    public static void registerService(AnalyticsService service) {
         if (!service.isEnabled()) {
             return;
         }
-        log.info(String.format("Enabling analytics service %s", service.getClass().getSimpleName()));
+        log.info(String.format("Registering analytics service %s", service.getClass().getSimpleName()));
         registeredServices.add(service);
+    }
+
+    public static void deregisterService(AnalyticsService service) {
+        if (registeredServices.contains(service)) {
+            log.info(String.format("Deregistering analytics service %s", service.getClass().getSimpleName()));
+            registeredServices.remove(service);
+        } else {
+            log.warn(String.format("Failed to Deregister analytics service %s. Reason: Not found",
+                    service.getClass().getSimpleName()));
+        }
     }
 
     private static void publishAnalytic(JsonObject payload) {
