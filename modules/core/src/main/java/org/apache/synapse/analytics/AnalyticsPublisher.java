@@ -64,8 +64,8 @@ public class AnalyticsPublisher {
                 AnalyticsConstants.PUBLISHER_DISABLED_ENDPOINTS, false);
         analyticsDisabledForInboundEndpoints = SynapsePropertiesLoader.getBooleanProperty(
                 AnalyticsConstants.PUBLISHER_DISABLED_INBOUND_ENDPOINTS, false);
-        namedSequencesOnly = SynapsePropertiesLoader.getBooleanProperty(
-                AnalyticsConstants.PUBLISHER_NAMED_SEQUENCES_ONLY, false);
+        AnalyticsPublisher.setNamedSequencesOnly(SynapsePropertiesLoader.getBooleanProperty(
+                AnalyticsConstants.PUBLISHER_NAMED_SEQUENCES_ONLY, false));
     }
 
     private static void prepareAnalyticServices() {
@@ -110,6 +110,13 @@ public class AnalyticsPublisher {
             return;
         }
 
+        if (!(synCtx instanceof Axis2MessageContext)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Ignoring non-Axis2MessageContext message for ApiAnalytics");
+            }
+            return;
+        }
+
         JsonObject analytics = generateAnalyticsObject(synCtx, API.class);
 
         JsonObject apiDetails = new JsonObject();
@@ -129,7 +136,14 @@ public class AnalyticsPublisher {
             return;
         }
 
-        if (namedSequencesOnly && !SequenceType.NAMED.equals(sequence.getSequenceType())) {
+        if (!(synCtx instanceof Axis2MessageContext)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Ignoring non-Axis2MessageContext message for SequenceMediatorAnalytics");
+            }
+            return;
+        }
+
+        if (isNamedSequencesOnly() && !SequenceType.NAMED.equals(sequence.getSequenceType())) {
             return;
         }
 
@@ -169,6 +183,13 @@ public class AnalyticsPublisher {
             return;
         }
 
+        if (!(synCtx instanceof Axis2MessageContext)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Ignoring non-Axis2MessageContext message for ProxyServiceAnalytics");
+            }
+            return;
+        }
+
         JsonObject analytics = generateAnalyticsObject(synCtx, ProxyService.class);
 
         analytics.addProperty("transport", (String) synCtx.getProperty(SynapseConstants.TRANSPORT_IN_NAME));
@@ -188,6 +209,13 @@ public class AnalyticsPublisher {
             return;
         }
 
+        if (!(synCtx instanceof Axis2MessageContext)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Ignoring non-Axis2MessageContext message for EndpointAnalytics");
+            }
+            return;
+        }
+
         JsonObject analytics = generateAnalyticsObject(synCtx, Endpoint.class);
 
         JsonObject endpointDetails = new JsonObject();
@@ -199,6 +227,13 @@ public class AnalyticsPublisher {
 
     public static void publishInboundEndpointAnalytics(MessageContext synCtx, InboundEndpoint endpointDef) {
         if (analyticsDisabledForInboundEndpoints) {
+            return;
+        }
+
+        if (!(synCtx instanceof Axis2MessageContext)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Ignoring non-Axis2MessageContext message for InboundEndpointAnalytics");
+            }
             return;
         }
 
@@ -264,6 +299,14 @@ public class AnalyticsPublisher {
         json.addProperty("remoteHost", (String) axisCtx.getProperty(BridgeConstants.REMOTE_HOST));
         json.addProperty("contentType", (String) axisCtx.getProperty(BridgeConstants.CONTENT_TYPE_HEADER));
         json.addProperty("httpMethod", (String) axisCtx.getProperty(BridgeConstants.HTTP_METHOD));
+    }
+
+    public static boolean isNamedSequencesOnly() {
+        return namedSequencesOnly;
+    }
+
+    public static void setNamedSequencesOnly(boolean namedSequencesOnly) {
+        AnalyticsPublisher.namedSequencesOnly = namedSequencesOnly;
     }
 
 }
