@@ -24,7 +24,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 public class SimpleAnalyticsService implements AnalyticsService {
-    private final Queue<JsonObject> analyticsStack = new LinkedList<>();
+    private final Queue<JsonObject> analyticsQueue = new LinkedList<>();
     private boolean enabled = false;
 
     @Override
@@ -42,22 +42,22 @@ public class SimpleAnalyticsService implements AnalyticsService {
 
     @Override
     public void publish(JsonObject data) {
-        analyticsStack.offer(data);
+        analyticsQueue.offer(data);
     }
 
     public JsonObject fetchAnalytic() {
-        if (analyticsStack.isEmpty()) {
+        if (analyticsQueue.isEmpty()) {
             return null;
         }
 
-        return analyticsStack.poll();
+        return analyticsQueue.poll();
     }
 
     public void clear() {
-        analyticsStack.clear();
+        analyticsQueue.clear();
     }
 
     public int getAvailableAnalyticsCount() {
-        return analyticsStack.size();
+        return analyticsQueue.size();
     }
 }
