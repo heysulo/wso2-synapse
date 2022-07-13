@@ -80,12 +80,12 @@ public class Axis2MessageContext implements MessageContext {
     private final Stack<FaultHandler> faultStack = new Stack<FaultHandler>();
 
     /**
-     * Latency Stack is used to calculate latencies at different mediation stages
+     * Latency Stack is used to calculate latencies at different mediation stages.
      */
     private final Stack<Instant> latencyStack = new Stack<Instant>();
 
     /**
-     * Maintains data which needs to be published with analytics AnalyticsPublisher
+     * Maintains data which needs to be published with analytics AnalyticsPublisher.
      */
     private final Map<String, Object> analyticsMetadata = new HashMap<String, Object>();
 
@@ -724,8 +724,13 @@ public class Axis2MessageContext implements MessageContext {
         return Duration.between(latencyStack.pop(), Instant.now()).toMillis();
     }
 
+    /**
+     * Stores the value provided in the message context which will be published with analytics
+     * @param key key for the analytic
+     * @param value analytic value
+     */
     public void setAnalyticsMetadata(String key, Object value) {
-        while (true) {
+        while (true) {  // Same implementation from org.apache.axis2.context
             try {
                 this.analyticsMetadata.put(key, value);
                 break;

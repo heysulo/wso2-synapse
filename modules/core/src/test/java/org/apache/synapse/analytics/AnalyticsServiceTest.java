@@ -58,6 +58,7 @@ public class AnalyticsServiceTest extends TestCase {
     private static final String SERVER_INFO_SERVER_NAME = "wso2.dev";
     private static final String SERVER_INFO_HOST_NAME = "dev.local";
     private static final String SERVER_INFO_IP_ADDRESS = "1.2.3.4";
+    private static final String SERVER_INFO_PUBLISHER_ID = SERVER_INFO_HOST_NAME;
 
     private static final String TEST_API_NAME = "TestAPI";
     private static final String TEST_API_CONTEXT = "/test";
@@ -249,6 +250,8 @@ public class AnalyticsServiceTest extends TestCase {
         assertEquals(SERVER_INFO_SERVER_NAME, dataObject.get("serverName").getAsString());
         assertTrue(dataObject.has("ipAddress"));
         assertEquals(SERVER_INFO_IP_ADDRESS, dataObject.get("ipAddress").getAsString());
+        assertTrue(dataObject.has("publisherId"));
+        assertEquals(SERVER_INFO_PUBLISHER_ID, dataObject.get("publisherId").getAsString());
     }
 
     private void verifyTimestamp(JsonElement timestampElement) {

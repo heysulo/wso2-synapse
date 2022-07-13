@@ -530,6 +530,4 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     public SequenceType getSequenceType() {
         return sequenceType;
     }
-
-
 }

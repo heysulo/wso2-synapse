@@ -11,7 +11,7 @@ public final class ElasticsearchAnalyticsService implements AnalyticsService {
 
     private static final Log log = LogFactory.getLog(ElasticsearchAnalyticsService.class);
     private static ElasticsearchAnalyticsService instance = null;
-    boolean enabled = false;
+    private boolean enabled = false;
     private String analyticsDataPrefix;
 
     private ElasticsearchAnalyticsService() {

@@ -450,7 +450,6 @@ public class ServerManager {
             // if the server cannot be destroyed just set the current state as the server state
             changeState(serverState);
         }
-
     }
 
     /**

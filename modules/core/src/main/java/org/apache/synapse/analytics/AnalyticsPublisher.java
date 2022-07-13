@@ -230,6 +230,13 @@ public class AnalyticsPublisher {
             return;
         }
 
+        if (endpointDef == null) {
+            if (log.isDebugEnabled()) {
+                log.debug("Ignoring analytics for unknown InboundEndpoint");
+            }
+            return;
+        }
+
         if (!(synCtx instanceof Axis2MessageContext)) {
             if (log.isDebugEnabled()) {
                 log.debug("Ignoring non-Axis2MessageContext message for InboundEndpointAnalytics");

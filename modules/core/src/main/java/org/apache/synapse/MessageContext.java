@@ -459,15 +459,15 @@ public OMElement getFormat(String key);
     public void setMessageFlowTracingState(int tracingState);
 
     /**
-     * Adds a new latency calculation task, where the output can be retrieved with {@link #getLatency()}
-     * For each {@link #recordLatency()} method call there should be a corresponding {@link #getLatency()} method call
+     * Adds a new latency calculation task, where the output can be retrieved with {@link #getLatency()}.
+     * For each {@link #recordLatency()} method call there should be a corresponding {@link #getLatency()} method call.
      */
     public default void recordLatency() {};
 
     /**
      * Calculates the time between the previous corresponding {@link #recordLatency()} method call and now. This should
-     * be used with {@link #recordLatency()}
-     * @return latency in milliseconds
+     * be used with {@link #recordLatency()}.
+     * @return latency in milliseconds.
      */
     public default long getLatency() {
         return 0;
