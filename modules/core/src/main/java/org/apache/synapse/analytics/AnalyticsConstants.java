@@ -23,7 +23,7 @@ public class AnalyticsConstants {
     /**
      * Synapse Configurations
      */
-    public static class Configurations {
+    public static class SynapseConfiguration {
         /**
          * Schema version of the analytic.
          */
@@ -77,4 +77,58 @@ public class AnalyticsConstants {
         public static final String ELASTICSEARCH_ENABLED = "analytics.service.elasticsearch.enabled";
     }
 
+    public static class ServerMetadataFieldDef {
+        public static final String HOST_NAME = "hostname";
+        public static final String SERVER_NAME = "serverName";
+        public static final String IP_ADDRESS = "ipAddress";
+        public static final String PUBLISHER_ID = "id";
+    }
+
+    public static class EnvelopDef {
+        public static final String TIMESTAMP = "timestamp";
+        public static final String SCHEMA_VERSION = "schemaVersion";
+        public static final String SERVER_INFO = "serverInfo";
+        public static final String PAYLOAD = "payload";
+
+        public static final String ENTITY_TYPE = "entityType";
+        public static final String ENTITY_CLASS_NAME = "entityClassName";
+        public static final String FAULT_RESPONSE = "faultResponse";
+        public static final String CORRELATION_ID = "correlation_id";
+        public static final String MESSAGE_ID = "messageId";
+        public static final String LATENCY = "latency";
+        public static final String METADATA = "metadata";
+
+        public static final String REMOTE_HOST = "remoteHost";
+        public static final String CONTENT_TYPE = "contentType";
+        public static final String HTTP_METHOD = "httpMethod";
+
+        public static final String API = "api";
+        public static final String SUB_REQUEST_PATH = "subRequestPath";
+        public static final String API_CONTEXT = "apiContext";
+        public static final String METHOD = "method";
+        public static final String TRANSPORT = "transport";
+        public static final String API_DETAILS = "apiDetails";
+
+        public static final String SEQUENCE_TYPE = "type";
+        public static final String SEQUENCE_NAME = "name";
+        public static final String SEQUENCE_API_CONTEXT = "apiContext";
+        public static final String SEQUENCE_API = "api";
+        public static final String SEQUENCE_API_SUB_REQUEST_PATH = "subRequestPath";
+        public static final String SEQUENCE_API_METHOD = "method";
+        public static final String SEQUENCE_PROXY_NAME = "proxyName";
+        public static final String SEQUENCE_DETAILS = "sequenceDetails";
+
+        public static final String PROXY_SERVICE_TRANSPORT = "transport";
+        public static final String PROXY_SERVICE_IS_DOING_REST = "isClientDoingREST";
+        public static final String PROXY_SERVICE_IS_DOING_SOAP11 = "isClientDoingSOAP11";
+        public static final String PROXY_SERVICE_NAME = "name";
+        public static final String PROXY_SERVICE_DETAILS = "proxyServiceDetails";
+
+        public static final String ENDPOINT_NAME = "name";
+        public static final String ENDPOINT_DETAILS = "endpointDetails";
+
+        public static final String INBOUND_ENDPOINT_NAME = "name";
+        public static final String INBOUND_ENDPOINT_PROTOCOL = "protocol";
+        public static final String INBOUND_ENDPOINT_DETAILS = "inboundEndpointDetails";
+    }
 }

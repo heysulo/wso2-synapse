@@ -46,7 +46,7 @@ import java.util.Map;
 public class AnalyticsPublisher {
     private static final Log log = LogFactory.getLog(AnalyticsPublisher.class);
     private static final Collection<AnalyticsService> registeredServices = new ArrayList<>();
-    private static final JsonObject serverInfo = new JsonObject();
+    private static final JsonObject serverMetadata = new JsonObject();
 
     private static boolean analyticsDisabledForAPI;
     private static boolean analyticsDisabledForSequences;
@@ -62,28 +62,28 @@ public class AnalyticsPublisher {
     }
 
     private static void prepareServerMetadata(ServerConfigurationInformation serverInfo) {
-        AnalyticsPublisher.serverInfo.addProperty("hostname", serverInfo.getHostName());
-        AnalyticsPublisher.serverInfo.addProperty("serverName", serverInfo.getServerName());
-        AnalyticsPublisher.serverInfo.addProperty("ipAddress", serverInfo.getIpAddress());
+        serverMetadata.addProperty(AnalyticsConstants.ServerMetadataFieldDef.HOST_NAME, serverInfo.getHostName());
+        serverMetadata.addProperty(AnalyticsConstants.ServerMetadataFieldDef.SERVER_NAME, serverInfo.getServerName());
+        serverMetadata.addProperty(AnalyticsConstants.ServerMetadataFieldDef.IP_ADDRESS, serverInfo.getIpAddress());
 
         String publisherId = SynapsePropertiesLoader.getPropertyValue(
-                AnalyticsConstants.Configurations.IDENTIFIER, serverInfo.getHostName());
-        AnalyticsPublisher.serverInfo.addProperty("publisherId", publisherId);
+                AnalyticsConstants.SynapseConfiguration.IDENTIFIER, serverInfo.getHostName());
+        serverMetadata.addProperty(AnalyticsConstants.ServerMetadataFieldDef.PUBLISHER_ID, publisherId);
     }
 
     private static void loadConfigurations() {
         analyticsDisabledForAPI = !SynapsePropertiesLoader.getBooleanProperty(
-                AnalyticsConstants.Configurations.API_ANALYTICS_ENABLED, true);
+                AnalyticsConstants.SynapseConfiguration.API_ANALYTICS_ENABLED, true);
         analyticsDisabledForSequences = !SynapsePropertiesLoader.getBooleanProperty(
-                AnalyticsConstants.Configurations.SEQUENCE_ANALYTICS_ENABLED, true);
+                AnalyticsConstants.SynapseConfiguration.SEQUENCE_ANALYTICS_ENABLED, true);
         analyticsDisabledForProxyServices = !SynapsePropertiesLoader.getBooleanProperty(
-                AnalyticsConstants.Configurations.PROXY_SERVICE_ANALYTICS_ENABLED, true);
+                AnalyticsConstants.SynapseConfiguration.PROXY_SERVICE_ANALYTICS_ENABLED, true);
         analyticsDisabledForEndpoints = !SynapsePropertiesLoader.getBooleanProperty(
-                AnalyticsConstants.Configurations.ENDPOINT_ANALYTICS_ENABLED, true);
+                AnalyticsConstants.SynapseConfiguration.ENDPOINT_ANALYTICS_ENABLED, true);
         analyticsDisabledForInboundEndpoints = !SynapsePropertiesLoader.getBooleanProperty(
-                AnalyticsConstants.Configurations.INBOUND_ENDPOINT_ANALYTICS_ENABLED, true);
+                AnalyticsConstants.SynapseConfiguration.INBOUND_ENDPOINT_ANALYTICS_ENABLED, true);
         AnalyticsPublisher.setNamedSequencesOnly(SynapsePropertiesLoader.getBooleanProperty(
-                AnalyticsConstants.Configurations.NAMED_SEQUENCES_ONLY, false));
+                AnalyticsConstants.SynapseConfiguration.NAMED_SEQUENCES_ONLY, false));
     }
 
     private static void prepareAnalyticServices() {
@@ -111,10 +111,11 @@ public class AnalyticsPublisher {
     public static void publishAnalytic(JsonObject payload) {
         Instant analyticTimestamp = Instant.now();
         JsonObject analyticsEnvelope = new JsonObject();
-        analyticsEnvelope.addProperty("timestamp", analyticTimestamp.toString());
-        analyticsEnvelope.addProperty("schemaVersion", AnalyticsConstants.Configurations.SCHEMA_VERSION);
-        analyticsEnvelope.add("serverInfo", serverInfo);
-        analyticsEnvelope.add("payload", payload);
+        analyticsEnvelope.addProperty(AnalyticsConstants.EnvelopDef.TIMESTAMP, analyticTimestamp.toString());
+        analyticsEnvelope.addProperty(AnalyticsConstants.EnvelopDef.SCHEMA_VERSION,
+                AnalyticsConstants.SynapseConfiguration.SCHEMA_VERSION);
+        analyticsEnvelope.add(AnalyticsConstants.EnvelopDef.SERVER_INFO, serverMetadata);
+        analyticsEnvelope.add(AnalyticsConstants.EnvelopDef.PAYLOAD, payload);
 
         registeredServices.forEach(service -> {
             if (service.isEnabled()) {
@@ -138,12 +139,17 @@ public class AnalyticsPublisher {
         JsonObject analytics = generateAnalyticsObject(synCtx, API.class);
 
         JsonObject apiDetails = new JsonObject();
-        apiDetails.addProperty("api", (String) synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
-        apiDetails.addProperty("subRequestPath", (String) synCtx.getProperty(RESTConstants.REST_SUB_REQUEST_PATH));
-        apiDetails.addProperty("apiContext", (String) synCtx.getProperty(RESTConstants.REST_API_CONTEXT));
-        apiDetails.addProperty("method", (String) synCtx.getProperty(RESTConstants.REST_METHOD));
-        apiDetails.addProperty("transport", (String) synCtx.getProperty(SynapseConstants.TRANSPORT_IN_NAME));
-        analytics.add("apiDetails", apiDetails);
+        apiDetails.addProperty(AnalyticsConstants.EnvelopDef.API,
+                (String) synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        apiDetails.addProperty(AnalyticsConstants.EnvelopDef.SUB_REQUEST_PATH,
+                (String) synCtx.getProperty(RESTConstants.REST_SUB_REQUEST_PATH));
+        apiDetails.addProperty(AnalyticsConstants.EnvelopDef.API_CONTEXT,
+                (String) synCtx.getProperty(RESTConstants.REST_API_CONTEXT));
+        apiDetails.addProperty(AnalyticsConstants.EnvelopDef.METHOD,
+                (String) synCtx.getProperty(RESTConstants.REST_METHOD));
+        apiDetails.addProperty(AnalyticsConstants.EnvelopDef.TRANSPORT,
+                (String) synCtx.getProperty(SynapseConstants.TRANSPORT_IN_NAME));
+        analytics.add(AnalyticsConstants.EnvelopDef.API_DETAILS, apiDetails);
         attachHttpProperties(analytics, synCtx);
 
         publishAnalytic(analytics);
@@ -168,31 +174,37 @@ public class AnalyticsPublisher {
         JsonObject analytics = generateAnalyticsObject(synCtx, SequenceMediator.class);
 
         JsonObject sequenceDetails = new JsonObject();
-        sequenceDetails.addProperty("type", sequence.getSequenceType().toString());
+        sequenceDetails.addProperty(AnalyticsConstants.EnvelopDef.SEQUENCE_TYPE, sequence.getSequenceType().toString());
         if (sequence.getSequenceType() == SequenceType.NAMED) {
-            sequenceDetails.addProperty("name", sequence.getName());
+            sequenceDetails.addProperty(AnalyticsConstants.EnvelopDef.SEQUENCE_NAME, sequence.getName());
         } else {
-            sequenceDetails.addProperty("name", sequence.getSequenceNameForStatistics());
+            sequenceDetails.addProperty(
+                    AnalyticsConstants.EnvelopDef.SEQUENCE_NAME, sequence.getSequenceNameForStatistics());
             switch (sequence.getSequenceType()) {
                 case API_INSEQ:
                 case API_OUTSEQ:
                 case API_FAULTSEQ:
-                    sequenceDetails.addProperty("apiContext", (String) synCtx.getProperty(RESTConstants.REST_API_CONTEXT));
-                    sequenceDetails.addProperty("api", (String) synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
-                    sequenceDetails.addProperty("subRequestPath", (String) synCtx.getProperty(RESTConstants.REST_SUB_REQUEST_PATH));
-                    sequenceDetails.addProperty("method", (String) synCtx.getProperty(RESTConstants.REST_METHOD));
+                    sequenceDetails.addProperty(AnalyticsConstants.EnvelopDef.SEQUENCE_API_CONTEXT,
+                            (String) synCtx.getProperty(RESTConstants.REST_API_CONTEXT));
+                    sequenceDetails.addProperty(AnalyticsConstants.EnvelopDef.SEQUENCE_API,
+                            (String) synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+                    sequenceDetails.addProperty(AnalyticsConstants.EnvelopDef.SEQUENCE_API_SUB_REQUEST_PATH,
+                            (String) synCtx.getProperty(RESTConstants.REST_SUB_REQUEST_PATH));
+                    sequenceDetails.addProperty(AnalyticsConstants.EnvelopDef.SEQUENCE_API_METHOD,
+                            (String) synCtx.getProperty(RESTConstants.REST_METHOD));
                     break;
                 case PROXY_INSEQ:
                 case PROXY_OUTSEQ:
                 case PROXY_FAULTSEQ:
-                    sequenceDetails.addProperty("proxyName", (String) synCtx.getProperty(SynapseConstants.PROXY_SERVICE));
+                    sequenceDetails.addProperty(AnalyticsConstants.EnvelopDef.SEQUENCE_PROXY_NAME,
+                            (String) synCtx.getProperty(SynapseConstants.PROXY_SERVICE));
                     break;
                 case ANON:
                     break;
             }
         }
 
-        analytics.add("sequenceDetails", sequenceDetails);
+        analytics.add(AnalyticsConstants.EnvelopDef.SEQUENCE_DETAILS, sequenceDetails);
         publishAnalytic(analytics);
     }
 
@@ -210,13 +222,17 @@ public class AnalyticsPublisher {
 
         JsonObject analytics = generateAnalyticsObject(synCtx, ProxyService.class);
 
-        analytics.addProperty("transport", (String) synCtx.getProperty(SynapseConstants.TRANSPORT_IN_NAME));
-        analytics.addProperty("isClientDoingREST", (boolean) synCtx.getProperty(SynapseConstants.IS_CLIENT_DOING_REST));
-        analytics.addProperty("isClientDoingSOAP11", (boolean) synCtx.getProperty(SynapseConstants.IS_CLIENT_DOING_SOAP11));
+        analytics.addProperty(AnalyticsConstants.EnvelopDef.PROXY_SERVICE_TRANSPORT,
+                (String) synCtx.getProperty(SynapseConstants.TRANSPORT_IN_NAME));
+        analytics.addProperty(AnalyticsConstants.EnvelopDef.PROXY_SERVICE_IS_DOING_REST,
+                (boolean) synCtx.getProperty(SynapseConstants.IS_CLIENT_DOING_REST));
+        analytics.addProperty(AnalyticsConstants.EnvelopDef.PROXY_SERVICE_IS_DOING_SOAP11,
+                (boolean) synCtx.getProperty(SynapseConstants.IS_CLIENT_DOING_SOAP11));
 
         JsonObject proxyServiceDetails = new JsonObject();
-        proxyServiceDetails.addProperty("name", (String) synCtx.getProperty(SynapseConstants.PROXY_SERVICE));
-        analytics.add("proxyServiceDetails", proxyServiceDetails);
+        proxyServiceDetails.addProperty(AnalyticsConstants.EnvelopDef.PROXY_SERVICE_NAME,
+                (String) synCtx.getProperty(SynapseConstants.PROXY_SERVICE));
+        analytics.add(AnalyticsConstants.EnvelopDef.PROXY_SERVICE_DETAILS, proxyServiceDetails);
         attachHttpProperties(analytics, synCtx);
 
         publishAnalytic(analytics);
@@ -237,8 +253,8 @@ public class AnalyticsPublisher {
         JsonObject analytics = generateAnalyticsObject(synCtx, Endpoint.class);
 
         JsonObject endpointDetails = new JsonObject();
-        endpointDetails.addProperty("name", endpointDef.leafEndpoint.getName());
-        analytics.add("endpointDetails", endpointDetails);
+        endpointDetails.addProperty(AnalyticsConstants.EnvelopDef.ENDPOINT_NAME, endpointDef.leafEndpoint.getName());
+        analytics.add(AnalyticsConstants.EnvelopDef.ENDPOINT_DETAILS, endpointDetails);
 
         publishAnalytic(analytics);
     }
@@ -265,9 +281,9 @@ public class AnalyticsPublisher {
         JsonObject analytics = generateAnalyticsObject(synCtx, InboundEndpoint.class);
 
         JsonObject inboundEndpointDetails = new JsonObject();
-        inboundEndpointDetails.addProperty("name", endpointDef.getName());
-        inboundEndpointDetails.addProperty("protocol", endpointDef.getProtocol());
-        analytics.add("inboundEndpointDetails", inboundEndpointDetails);
+        inboundEndpointDetails.addProperty(AnalyticsConstants.EnvelopDef.INBOUND_ENDPOINT_NAME, endpointDef.getName());
+        inboundEndpointDetails.addProperty(AnalyticsConstants.EnvelopDef.INBOUND_ENDPOINT_PROTOCOL, endpointDef.getProtocol());
+        analytics.add(AnalyticsConstants.EnvelopDef.INBOUND_ENDPOINT_DETAILS, inboundEndpointDetails);
         attachHttpProperties(analytics, synCtx);
 
         publishAnalytic(analytics);
@@ -275,12 +291,13 @@ public class AnalyticsPublisher {
 
     private static JsonObject generateAnalyticsObject(MessageContext synCtx, Class<?> entityClass) {
         JsonObject analytics = new JsonObject();
-        analytics.addProperty("entityType", entityClass.getSimpleName());
-        analytics.addProperty("entityClassName", entityClass.getName());
-        analytics.addProperty("faultResponse", synCtx.isFaultResponse());
-        analytics.addProperty("messageId", synCtx.getMessageID());
-        analytics.addProperty("correlation_id", (String) synCtx.getProperty(CorrelationConstants.CORRELATION_ID));
-        analytics.addProperty("latency", synCtx.getLatency());
+        analytics.addProperty(AnalyticsConstants.EnvelopDef.ENTITY_TYPE, entityClass.getSimpleName());
+        analytics.addProperty(AnalyticsConstants.EnvelopDef.ENTITY_CLASS_NAME, entityClass.getName());
+        analytics.addProperty(AnalyticsConstants.EnvelopDef.FAULT_RESPONSE, synCtx.isFaultResponse());
+        analytics.addProperty(AnalyticsConstants.EnvelopDef.MESSAGE_ID, synCtx.getMessageID());
+        analytics.addProperty(AnalyticsConstants.EnvelopDef.CORRELATION_ID,
+                (String) synCtx.getProperty(CorrelationConstants.CORRELATION_ID));
+        analytics.addProperty(AnalyticsConstants.EnvelopDef.LATENCY, synCtx.getLatency());
 
         JsonObject metadata = new JsonObject();
         Axis2MessageContext axis2mc = (Axis2MessageContext) synCtx;
@@ -310,7 +327,7 @@ public class AnalyticsPublisher {
             }
         }
 
-        analytics.add("metadata", metadata);
+        analytics.add(AnalyticsConstants.EnvelopDef.METADATA, metadata);
         return analytics;
     }
 
@@ -321,9 +338,12 @@ public class AnalyticsPublisher {
             return;
         }
 
-        json.addProperty("remoteHost", (String) axisCtx.getProperty(BridgeConstants.REMOTE_HOST));
-        json.addProperty("contentType", (String) axisCtx.getProperty(BridgeConstants.CONTENT_TYPE_HEADER));
-        json.addProperty("httpMethod", (String) axisCtx.getProperty(BridgeConstants.HTTP_METHOD));
+        json.addProperty(AnalyticsConstants.EnvelopDef.REMOTE_HOST,
+                (String) axisCtx.getProperty(BridgeConstants.REMOTE_HOST));
+        json.addProperty(AnalyticsConstants.EnvelopDef.CONTENT_TYPE,
+                (String) axisCtx.getProperty(BridgeConstants.CONTENT_TYPE_HEADER));
+        json.addProperty(AnalyticsConstants.EnvelopDef.HTTP_METHOD,
+                (String) axisCtx.getProperty(BridgeConstants.HTTP_METHOD));
     }
 
     public static boolean isNamedSequencesOnly() {
@@ -333,5 +353,4 @@ public class AnalyticsPublisher {
     public static void setNamedSequencesOnly(boolean namedSequencesOnly) {
         AnalyticsPublisher.namedSequencesOnly = namedSequencesOnly;
     }
-
 }

@@ -180,7 +180,7 @@ public class AnalyticsServiceTest extends TestCase {
                 "<endpoint><http method=\"GET\" uri-template=\"https://wso2.com\"/></endpoint>");
         EndpointDefinition ep1 = factory.createEndpointDefinition(em);
         HTTPEndpoint httpEndpoint = new HTTPEndpoint();
-        httpEndpoint.setHttpMethod("GET");
+        httpEndpoint.setHttpMethod(TEST_API_METHOD);
         httpEndpoint.setDefinition(ep1);
         httpEndpoint.setUriTemplate(UriTemplate.fromTemplate("https://wso2.com"));
         httpEndpoint.init(synapseEnvironment);
@@ -216,11 +216,11 @@ public class AnalyticsServiceTest extends TestCase {
 
     private void verifySchema(JsonObject analytic, @NotNull AnalyticPayloadType payloadType) {
         assertNotNull(analytic);
-        verifySchemaVersion(analytic.get("schemaVersion"));
-        verifyServerInfo(analytic.get("serverInfo"));
-        verifyTimestamp(analytic.get("timestamp"));
+        verifySchemaVersion(analytic.get(AnalyticsConstants.EnvelopDef.SCHEMA_VERSION));
+        verifyServerInfo(analytic.get(AnalyticsConstants.EnvelopDef.SERVER_INFO));
+        verifyTimestamp(analytic.get(AnalyticsConstants.EnvelopDef.TIMESTAMP));
 
-        JsonElement payloadElement = analytic.get("payload");
+        JsonElement payloadElement = analytic.get(AnalyticsConstants.EnvelopDef.PAYLOAD);
         switch (payloadType) {
             case PROXY_SERVICE:
                 verifyProxyServicePayload(payloadElement);
@@ -244,14 +244,18 @@ public class AnalyticsServiceTest extends TestCase {
         assertTrue(serverInfoElement.isJsonObject());
 
         JsonObject dataObject = serverInfoElement.getAsJsonObject();
-        assertTrue(dataObject.has("hostname"));
-        assertEquals(SERVER_INFO_HOST_NAME, dataObject.get("hostname").getAsString());
-        assertTrue(dataObject.has("serverName"));
-        assertEquals(SERVER_INFO_SERVER_NAME, dataObject.get("serverName").getAsString());
-        assertTrue(dataObject.has("ipAddress"));
-        assertEquals(SERVER_INFO_IP_ADDRESS, dataObject.get("ipAddress").getAsString());
-        assertTrue(dataObject.has("publisherId"));
-        assertEquals(SERVER_INFO_PUBLISHER_ID, dataObject.get("publisherId").getAsString());
+        assertTrue(dataObject.has(AnalyticsConstants.ServerMetadataFieldDef.HOST_NAME));
+        assertEquals(SERVER_INFO_HOST_NAME,
+                dataObject.get(AnalyticsConstants.ServerMetadataFieldDef.HOST_NAME).getAsString());
+        assertTrue(dataObject.has(AnalyticsConstants.ServerMetadataFieldDef.SERVER_NAME));
+        assertEquals(SERVER_INFO_SERVER_NAME,
+                dataObject.get(AnalyticsConstants.ServerMetadataFieldDef.SERVER_NAME).getAsString());
+        assertTrue(dataObject.has(AnalyticsConstants.ServerMetadataFieldDef.IP_ADDRESS));
+        assertEquals(SERVER_INFO_IP_ADDRESS,
+                dataObject.get(AnalyticsConstants.ServerMetadataFieldDef.IP_ADDRESS).getAsString());
+        assertTrue(dataObject.has(AnalyticsConstants.ServerMetadataFieldDef.PUBLISHER_ID));
+        assertEquals(SERVER_INFO_PUBLISHER_ID,
+                dataObject.get(AnalyticsConstants.ServerMetadataFieldDef.PUBLISHER_ID).getAsString());
     }
 
     private void verifyTimestamp(JsonElement timestampElement) {
@@ -275,12 +279,12 @@ public class AnalyticsServiceTest extends TestCase {
 
         JsonObject payload = payloadElement.getAsJsonObject();
         verifyCommonPayloadFields(payload);
-        assertTrue(payload.has("sequenceDetails"));
-        assertTrue(payload.get("sequenceDetails").isJsonObject());
+        assertTrue(payload.has(AnalyticsConstants.EnvelopDef.SEQUENCE_DETAILS));
+        assertTrue(payload.get(AnalyticsConstants.EnvelopDef.SEQUENCE_DETAILS).isJsonObject());
 
-        JsonObject sequenceDetails = payload.get("sequenceDetails").getAsJsonObject();
-        assertTrue(sequenceDetails.has("name"));
-        assertTrue(sequenceDetails.has("type"));
+        JsonObject sequenceDetails = payload.get(AnalyticsConstants.EnvelopDef.SEQUENCE_DETAILS).getAsJsonObject();
+        assertTrue(sequenceDetails.has(AnalyticsConstants.EnvelopDef.SEQUENCE_NAME));
+        assertTrue(sequenceDetails.has(AnalyticsConstants.EnvelopDef.SEQUENCE_TYPE));
     }
 
     private void verifyApiResourcePayload(JsonElement payloadElement) {
@@ -290,23 +294,23 @@ public class AnalyticsServiceTest extends TestCase {
         JsonObject payload = payloadElement.getAsJsonObject();
         verifyCommonPayloadFields(payload);
 
-        assertTrue(payload.has("remoteHost"));
-        assertTrue(payload.has("contentType"));
-        assertTrue(payload.has("httpMethod"));
-        assertEquals(TEST_API_METHOD, payload.get("httpMethod").getAsString());
+        assertTrue(payload.has(AnalyticsConstants.EnvelopDef.REMOTE_HOST));
+        assertTrue(payload.has(AnalyticsConstants.EnvelopDef.CONTENT_TYPE));
+        assertTrue(payload.has(AnalyticsConstants.EnvelopDef.HTTP_METHOD));
+        assertEquals(TEST_API_METHOD, payload.get(AnalyticsConstants.EnvelopDef.HTTP_METHOD).getAsString());
 
-        assertTrue(payload.has("apiDetails"));
-        assertTrue(payload.get("apiDetails").isJsonObject());
+        assertTrue(payload.has(AnalyticsConstants.EnvelopDef.API_DETAILS));
+        assertTrue(payload.get(AnalyticsConstants.EnvelopDef.API_DETAILS).isJsonObject());
 
-        JsonObject apiDetails = payload.get("apiDetails").getAsJsonObject();
-        assertTrue(apiDetails.has("api"));
-        assertEquals(TEST_API_NAME, apiDetails.get("api").getAsString());
-        assertTrue(apiDetails.has("subRequestPath"));
-        assertTrue(apiDetails.has("apiContext"));
-        assertEquals(TEST_API_CONTEXT, apiDetails.get("apiContext").getAsString());
-        assertTrue(apiDetails.has("method"));
-        assertEquals(TEST_API_METHOD, apiDetails.get("method").getAsString());
-        assertTrue(apiDetails.has("transport"));
+        JsonObject apiDetails = payload.get(AnalyticsConstants.EnvelopDef.API_DETAILS).getAsJsonObject();
+        assertTrue(apiDetails.has(AnalyticsConstants.EnvelopDef.API));
+        assertEquals(TEST_API_NAME, apiDetails.get(AnalyticsConstants.EnvelopDef.API).getAsString());
+        assertTrue(apiDetails.has(AnalyticsConstants.EnvelopDef.SUB_REQUEST_PATH));
+        assertTrue(apiDetails.has(AnalyticsConstants.EnvelopDef.API_CONTEXT));
+        assertEquals(TEST_API_CONTEXT, apiDetails.get(AnalyticsConstants.EnvelopDef.API_CONTEXT).getAsString());
+        assertTrue(apiDetails.has(AnalyticsConstants.EnvelopDef.METHOD));
+        assertEquals(TEST_API_METHOD, apiDetails.get(AnalyticsConstants.EnvelopDef.METHOD).getAsString());
+        assertTrue(apiDetails.has(AnalyticsConstants.EnvelopDef.TRANSPORT));
     }
 
     private void verifyEndpointPayload(JsonElement payloadElement) {
@@ -316,9 +320,9 @@ public class AnalyticsServiceTest extends TestCase {
         JsonObject payload = payloadElement.getAsJsonObject();
         verifyCommonPayloadFields(payload);
 
-        assertTrue(payload.has("endpointDetails"));
-        JsonObject endpointDetails = payload.get("endpointDetails").getAsJsonObject();
-        assertTrue(endpointDetails.has("name"));
+        assertTrue(payload.has(AnalyticsConstants.EnvelopDef.ENDPOINT_DETAILS));
+        JsonObject endpointDetails = payload.get(AnalyticsConstants.EnvelopDef.ENDPOINT_DETAILS).getAsJsonObject();
+        assertTrue(endpointDetails.has(AnalyticsConstants.EnvelopDef.ENDPOINT_NAME));
     }
 
     private void verifyProxyServicePayload(JsonElement payloadElement) {
@@ -328,17 +332,17 @@ public class AnalyticsServiceTest extends TestCase {
         JsonObject payload = payloadElement.getAsJsonObject();
         verifyCommonPayloadFields(payload);
 
-        assertTrue(payload.has("proxyServiceDetails"));
-        JsonObject proxyServiceDetails = payload.get("proxyServiceDetails").getAsJsonObject();
-        assertTrue(proxyServiceDetails.has("name"));
+        assertTrue(payload.has(AnalyticsConstants.EnvelopDef.PROXY_SERVICE_DETAILS));
+        JsonObject proxyServiceDetails = payload.get(AnalyticsConstants.EnvelopDef.PROXY_SERVICE_DETAILS).getAsJsonObject();
+        assertTrue(proxyServiceDetails.has(AnalyticsConstants.EnvelopDef.PROXY_SERVICE_NAME));
     }
 
     private void verifyCommonPayloadFields(JsonObject payload) {
-        assertTrue(payload.has("entityType"));
-        assertTrue(payload.has("entityClassName"));
-        assertTrue(payload.has("faultResponse"));
-        assertTrue(payload.has("latency"));
-        assertTrue(payload.has("metadata"));
+        assertTrue(payload.has(AnalyticsConstants.EnvelopDef.ENTITY_TYPE));
+        assertTrue(payload.has(AnalyticsConstants.EnvelopDef.ENTITY_CLASS_NAME));
+        assertTrue(payload.has(AnalyticsConstants.EnvelopDef.FAULT_RESPONSE));
+        assertTrue(payload.has(AnalyticsConstants.EnvelopDef.LATENCY));
+        assertTrue(payload.has(AnalyticsConstants.EnvelopDef.METADATA));
     }
 
     enum AnalyticPayloadType {
@@ -348,5 +352,4 @@ public class AnalyticsServiceTest extends TestCase {
         SEQUENCE,
         NON_STANDARD
     }
-
 }

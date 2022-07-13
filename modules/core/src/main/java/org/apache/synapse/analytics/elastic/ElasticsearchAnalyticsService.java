@@ -45,9 +45,9 @@ public final class ElasticsearchAnalyticsService implements AnalyticsService {
 
     private void loadConfigurations() {
         this.enabled = SynapsePropertiesLoader.getBooleanProperty(
-                AnalyticsConstants.Configurations.ELASTICSEARCH_ENABLED, false);
+                AnalyticsConstants.SynapseConfiguration.ELASTICSEARCH_ENABLED, false);
         this.analyticsDataPrefix = SynapsePropertiesLoader.getPropertyValue(
-                AnalyticsConstants.Configurations.ELASTICSEARCH_PREFIX, "SYNAPSE_ANALYTICS_DATA");
+                AnalyticsConstants.SynapseConfiguration.ELASTICSEARCH_PREFIX, "SYNAPSE_ANALYTICS_DATA");
     }
 
     @Override
