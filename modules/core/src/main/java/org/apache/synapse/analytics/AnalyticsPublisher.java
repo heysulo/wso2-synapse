@@ -1,3 +1,21 @@
+/*
+ * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
+ * WSO2 Inc. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.synapse.analytics;
 
 import com.google.gson.JsonObject;
@@ -49,23 +67,23 @@ public class AnalyticsPublisher {
         AnalyticsPublisher.serverInfo.addProperty("ipAddress", serverInfo.getIpAddress());
 
         String publisherId = SynapsePropertiesLoader.getPropertyValue(
-                AnalyticsConstants.PUBLISHER_IDENTIFIER, serverInfo.getHostName());
+                AnalyticsConstants.Configurations.IDENTIFIER, serverInfo.getHostName());
         AnalyticsPublisher.serverInfo.addProperty("publisherId", publisherId);
     }
 
     private static void loadConfigurations() {
-        analyticsDisabledForAPI = SynapsePropertiesLoader.getBooleanProperty(
-                AnalyticsConstants.PUBLISHER_DISABLED_API, false);
-        analyticsDisabledForSequences = SynapsePropertiesLoader.getBooleanProperty(
-                AnalyticsConstants.PUBLISHER_DISABLED_SEQUENCES, false);
-        analyticsDisabledForProxyServices = SynapsePropertiesLoader.getBooleanProperty(
-                AnalyticsConstants.PUBLISHER_DISABLED_PROXY_SERVICE, false);
-        analyticsDisabledForEndpoints = SynapsePropertiesLoader.getBooleanProperty(
-                AnalyticsConstants.PUBLISHER_DISABLED_ENDPOINTS, false);
-        analyticsDisabledForInboundEndpoints = SynapsePropertiesLoader.getBooleanProperty(
-                AnalyticsConstants.PUBLISHER_DISABLED_INBOUND_ENDPOINTS, false);
+        analyticsDisabledForAPI = !SynapsePropertiesLoader.getBooleanProperty(
+                AnalyticsConstants.Configurations.API_ANALYTICS_ENABLED, true);
+        analyticsDisabledForSequences = !SynapsePropertiesLoader.getBooleanProperty(
+                AnalyticsConstants.Configurations.SEQUENCE_ANALYTICS_ENABLED, true);
+        analyticsDisabledForProxyServices = !SynapsePropertiesLoader.getBooleanProperty(
+                AnalyticsConstants.Configurations.PROXY_SERVICE_ANALYTICS_ENABLED, true);
+        analyticsDisabledForEndpoints = !SynapsePropertiesLoader.getBooleanProperty(
+                AnalyticsConstants.Configurations.ENDPOINT_ANALYTICS_ENABLED, true);
+        analyticsDisabledForInboundEndpoints = !SynapsePropertiesLoader.getBooleanProperty(
+                AnalyticsConstants.Configurations.INBOUND_ENDPOINT_ANALYTICS_ENABLED, true);
         AnalyticsPublisher.setNamedSequencesOnly(SynapsePropertiesLoader.getBooleanProperty(
-                AnalyticsConstants.PUBLISHER_NAMED_SEQUENCES_ONLY, false));
+                AnalyticsConstants.Configurations.NAMED_SEQUENCES_ONLY, false));
     }
 
     private static void prepareAnalyticServices() {
@@ -94,7 +112,7 @@ public class AnalyticsPublisher {
         Instant analyticTimestamp = Instant.now();
         JsonObject analyticsEnvelope = new JsonObject();
         analyticsEnvelope.addProperty("timestamp", analyticTimestamp.toString());
-        analyticsEnvelope.addProperty("schemaVersion", AnalyticsConstants.SCHEMA_VERSION);
+        analyticsEnvelope.addProperty("schemaVersion", AnalyticsConstants.Configurations.SCHEMA_VERSION);
         analyticsEnvelope.add("serverInfo", serverInfo);
         analyticsEnvelope.add("payload", payload);
 
