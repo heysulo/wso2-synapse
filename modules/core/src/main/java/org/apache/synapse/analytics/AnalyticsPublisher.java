@@ -209,7 +209,7 @@ public class AnalyticsPublisher {
         publishAnalytic(analytics);
     }
 
-    public static void publishProxyServiceAnalytics(MessageContext synCtx) {
+    public static void publishProxyServiceAnalytics(MessageContext synCtx, ProxyService proxyServiceDef) {
         if (analyticsDisabledForProxyServices) {
             return;
         }
@@ -231,8 +231,7 @@ public class AnalyticsPublisher {
                 (boolean) synCtx.getProperty(SynapseConstants.IS_CLIENT_DOING_SOAP11));
 
         JsonObject proxyServiceDetails = new JsonObject();
-        proxyServiceDetails.addProperty(AnalyticsConstants.EnvelopDef.PROXY_SERVICE_NAME,
-                (String) synCtx.getProperty(SynapseConstants.PROXY_SERVICE));
+        proxyServiceDetails.addProperty(AnalyticsConstants.EnvelopDef.PROXY_SERVICE_NAME, proxyServiceDef.getName());
         analytics.add(AnalyticsConstants.EnvelopDef.PROXY_SERVICE_DETAILS, proxyServiceDetails);
         attachHttpProperties(analytics, synCtx);
 

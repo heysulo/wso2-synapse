@@ -273,7 +273,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
                 debugManager.releaseMediationFlowLock();
             }
             doPostInjectUpdates(synCtx);
-            AnalyticsPublisher.publishProxyServiceAnalytics(synCtx);
+            AnalyticsPublisher.publishProxyServiceAnalytics(synCtx, this.proxy);
         }
     }
 
