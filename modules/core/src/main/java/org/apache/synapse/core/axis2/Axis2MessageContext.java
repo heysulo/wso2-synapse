@@ -738,6 +738,15 @@ public class Axis2MessageContext implements MessageContext {
         }
     }
 
+    public void removeAnalyticsMetadata(String key) {
+        while (true) {  // Same implementation from org.apache.axis2.context
+            try {
+                this.analyticsMetadata.remove(key);
+                break;
+            } catch (ConcurrentModificationException ignored) {}
+        }
+    }
+
     public Map<String, Object> getAnalyticsMetadata() {
         return this.analyticsMetadata;
     }

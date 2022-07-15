@@ -165,6 +165,7 @@ public class PropertyMediatorFactory extends AbstractMediatorFactory {
                              "' or '" + XMLConfigConstants.SCOPE_REGISTRY +
                              "' or '" + XMLConfigConstants.SCOPE_TRACE +
                              "' or '" + XMLConfigConstants.SCOPE_SYSTEM +
+                             "' or '" + XMLConfigConstants.SCOPE_ANALYTICS +
                              "' values are allowed for attribute scope for a property mediator" +
                              ", Unsupported scope " + valueStr;
                 log.error(msg);
