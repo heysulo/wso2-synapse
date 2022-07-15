@@ -31,6 +31,7 @@ import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.ProxyService;
+import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.inbound.InboundEndpoint;
@@ -253,7 +254,14 @@ public class AnalyticsPublisher {
         JsonObject analytics = generateAnalyticsObject(synCtx, Endpoint.class);
 
         JsonObject endpointDetails = new JsonObject();
-        endpointDetails.addProperty(AnalyticsConstants.EnvelopDef.ENDPOINT_NAME, endpointDef.leafEndpoint.getName());
+        String endpointName;
+        if ((endpointDef.leafEndpoint instanceof AbstractEndpoint) &&
+                ((AbstractEndpoint)endpointDef.leafEndpoint).isAnonymous()) {
+            endpointName = SynapseConstants.ANONYMOUS_ENDPOINT;
+        } else {
+            endpointName = endpointDef.leafEndpoint.getName();
+        }
+        endpointDetails.addProperty(AnalyticsConstants.EnvelopDef.ENDPOINT_NAME, endpointName);
         analytics.add(AnalyticsConstants.EnvelopDef.ENDPOINT_DETAILS, endpointDetails);
 
         publishAnalytic(analytics);
