@@ -19,12 +19,13 @@
 package org.apache.synapse.analytics;
 
 import com.google.gson.JsonObject;
+import org.apache.synapse.analytics.schema.AnalyticsDataSchema;
 
 import java.util.LinkedList;
 import java.util.Queue;
 
 public class SimpleAnalyticsService implements AnalyticsService {
-    private final Queue<JsonObject> analyticsQueue = new LinkedList<>();
+    private final Queue<AnalyticsDataSchema> analyticsQueue = new LinkedList<>();
     private boolean enabled = false;
 
     @Override
@@ -41,7 +42,7 @@ public class SimpleAnalyticsService implements AnalyticsService {
     }
 
     @Override
-    public void publish(JsonObject data) {
+    public void publish(AnalyticsDataSchema data) {
         analyticsQueue.offer(data);
     }
 
@@ -50,7 +51,7 @@ public class SimpleAnalyticsService implements AnalyticsService {
             return null;
         }
 
-        return analyticsQueue.poll();
+        return analyticsQueue.poll().getJsonObject();
     }
 
     public void clear() {

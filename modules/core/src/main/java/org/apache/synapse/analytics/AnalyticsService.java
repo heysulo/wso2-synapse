@@ -18,7 +18,7 @@
 
 package org.apache.synapse.analytics;
 
-import com.google.gson.JsonObject;
+import org.apache.synapse.analytics.schema.AnalyticsDataSchema;
 
 public interface AnalyticsService {
 
@@ -34,6 +34,6 @@ public interface AnalyticsService {
      *
      * @param data analytic data.
      */
-    void publish(JsonObject data);
+    void publish(AnalyticsDataSchema data);
 
 }

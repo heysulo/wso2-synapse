@@ -69,12 +69,12 @@ public class AnalyticsConstants {
          * Name of the Synapse configuration used to determine the prefix Elasticsearch analytics are published with.
          * The purpose of this prefix is to distinguish log lines which hold analytics data from others.
          */
-        public static final String ELASTICSEARCH_PREFIX = "analytics.service.elasticsearch.prefix";
+        public static final String ELASTICSEARCH_PREFIX = "analytics.prefix";
 
         /**
          * Name of the Synapse configuration used to determine if the Elasticsearch service is enabled.
          */
-        public static final String ELASTICSEARCH_ENABLED = "analytics.service.elasticsearch.enabled";
+        public static final String ELASTICSEARCH_ENABLED = "analytics.enabled";
     }
 
     public static class ServerMetadataFieldDef {
@@ -125,6 +125,7 @@ public class AnalyticsConstants {
         public static final String PROXY_SERVICE_DETAILS = "proxyServiceDetails";
 
         public static final String ENDPOINT_NAME = "name";
+        public static final String ENDPOINT_IS_ANONYMOUS = "isAnonymous";
         public static final String ENDPOINT_DETAILS = "endpointDetails";
 
         public static final String INBOUND_ENDPOINT_NAME = "name";

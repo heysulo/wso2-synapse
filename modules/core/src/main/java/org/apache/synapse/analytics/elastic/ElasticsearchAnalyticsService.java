@@ -18,11 +18,11 @@
 
 package org.apache.synapse.analytics.elastic;
 
-import com.google.gson.JsonObject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.analytics.AnalyticsConstants;
 import org.apache.synapse.analytics.AnalyticsService;
+import org.apache.synapse.analytics.schema.AnalyticsDataSchema;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 
 public final class ElasticsearchAnalyticsService implements AnalyticsService {
@@ -56,12 +56,12 @@ public final class ElasticsearchAnalyticsService implements AnalyticsService {
     }
 
     @Override
-    public void publish(JsonObject analytic) {
+    public void publish(AnalyticsDataSchema analytic) {
         if (!isEnabled()) {
             return;
         }
 
-        String logOutput = this.analyticsDataPrefix + " " + analytic;
+        String logOutput = this.analyticsDataPrefix + " " + analytic.getJsonString();
         log.info(logOutput);
     }
 }

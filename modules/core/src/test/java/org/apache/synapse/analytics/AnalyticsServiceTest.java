@@ -32,6 +32,8 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SequenceType;
 import org.apache.synapse.ServerConfigurationInformation;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.analytics.schema.AnalyticsDataSchema;
+import org.apache.synapse.analytics.schema.AnalyticsDataSchemaElement;
 import org.apache.synapse.api.API;
 import org.apache.synapse.api.Resource;
 import org.apache.synapse.api.rest.RestRequestHandler;
@@ -45,6 +47,7 @@ import org.apache.synapse.endpoints.HTTPEndpoint;
 import org.apache.synapse.mediators.TestUtils;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.builtin.PropertyMediator;
+import org.apache.synapse.transport.netty.BridgeConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.jetbrains.annotations.NotNull;
 import org.mockito.Mockito;
@@ -60,7 +63,7 @@ public class AnalyticsServiceTest extends TestCase {
     private static final String SERVER_INFO_SERVER_NAME = "wso2.dev";
     private static final String SERVER_INFO_HOST_NAME = "dev.local";
     private static final String SERVER_INFO_IP_ADDRESS = "1.2.3.4";
-    private static final String SERVER_INFO_PUBLISHER_ID = SERVER_INFO_HOST_NAME;
+    private static final String SERVER_INFO_PUBLISHER_ID = "WSO2_UNIT_TEST";
 
     private static final String TEST_API_NAME = "TestAPI";
     private static final String TEST_API_CONTEXT = "/test";
@@ -68,6 +71,9 @@ public class AnalyticsServiceTest extends TestCase {
     private static final String TEST_API_METHOD = "GET";
     private static final String TEST_API_PROTOCOL = "https";
     private static final String TEST_SEQUENCE_NAME = "TestSequenceName";
+    private static final String TEST_ENDPOINT_NAME = "TestEndpointName";
+    private static final String TEST_REMOTE_HOST = "127.0.0.1";
+    private static final String TEST_CONTENT_TYPE = "application/json";
 
     private static final int CURRENT_SCHEMA_VERSION = 1;
     private final SimpleAnalyticsService service = new SimpleAnalyticsService();
@@ -85,7 +91,7 @@ public class AnalyticsServiceTest extends TestCase {
         sysConfig.setHostName(SERVER_INFO_HOST_NAME);
         sysConfig.setIpAddress(SERVER_INFO_IP_ADDRESS);
         AnalyticsPublisher.init(sysConfig);
-
+        AnalyticsDataSchema.setPublisherId(SERVER_INFO_PUBLISHER_ID);
         synapseEnvironment = PowerMockito.mock(Axis2SynapseEnvironment.class);
         ConfigurationContext axis2ConfigurationContext = new ConfigurationContext(new AxisConfiguration());
         axis2ConfigurationContext.getAxisConfiguration().addParameter(SynapseConstants.SYNAPSE_ENV, synapseEnvironment);
@@ -111,6 +117,8 @@ public class AnalyticsServiceTest extends TestCase {
         msgCtx.setIncomingTransportName(TEST_API_PROTOCOL);
         msgCtx.setProperty(Constants.Configuration.HTTP_METHOD, TEST_API_METHOD);
         msgCtx.setProperty(Constants.Configuration.TRANSPORT_IN_URL, url);
+        msgCtx.setProperty(BridgeConstants.REMOTE_HOST, TEST_REMOTE_HOST);
+        msgCtx.setProperty(BridgeConstants.CONTENT_TYPE_HEADER, TEST_CONTENT_TYPE);
         msgCtx.setProperty(NhttpConstants.REST_URL_POSTFIX, url.substring(1));
         msgCtx.setConfigurationContext(new ConfigurationContext(new AxisConfiguration()));
         return synCtx;
@@ -131,8 +139,8 @@ public class AnalyticsServiceTest extends TestCase {
     }
 
     public void testServiceEnabledState() {
-        JsonObject analyticData = new JsonObject();
-        analyticData.addProperty("testProperty", "HelloWorld");
+        AnalyticsDataSchemaElement analyticData = new AnalyticsDataSchemaElement();
+        analyticData.setAttribute("testProperty", "HelloWorld");
 
         service.enableService();
         AnalyticsPublisher.publishAnalytic(analyticData);
@@ -147,8 +155,8 @@ public class AnalyticsServiceTest extends TestCase {
     }
 
     public void testBasicAnalyticsSchema() {
-        JsonObject analyticData = new JsonObject();
-        analyticData.addProperty("testProperty", "HelloWorld");
+        AnalyticsDataSchemaElement analyticData = new AnalyticsDataSchemaElement();
+        analyticData.setAttribute("testProperty", "HelloWorld");
 
         AnalyticsPublisher.publishAnalytic(analyticData);
         assertTrue(service.isEnabled());
@@ -183,6 +191,7 @@ public class AnalyticsServiceTest extends TestCase {
                 "<endpoint><http method=\"GET\" uri-template=\"https://wso2.com\"/></endpoint>");
         EndpointDefinition ep1 = factory.createEndpointDefinition(em);
         HTTPEndpoint httpEndpoint = new HTTPEndpoint();
+        httpEndpoint.setName(TEST_ENDPOINT_NAME);
         httpEndpoint.setHttpMethod(TEST_API_METHOD);
         httpEndpoint.setDefinition(ep1);
         httpEndpoint.setUriTemplate(UriTemplate.fromTemplate("https://wso2.com"));
@@ -393,7 +402,6 @@ public class AnalyticsServiceTest extends TestCase {
         assertEquals(TEST_API_CONTEXT, apiDetails.get(AnalyticsConstants.EnvelopDef.API_CONTEXT).getAsString());
         assertTrue(apiDetails.has(AnalyticsConstants.EnvelopDef.METHOD));
         assertEquals(TEST_API_METHOD, apiDetails.get(AnalyticsConstants.EnvelopDef.METHOD).getAsString());
-        assertTrue(apiDetails.has(AnalyticsConstants.EnvelopDef.TRANSPORT));
     }
 
     private void verifyEndpointPayload(JsonElement payloadElement) {
@@ -406,6 +414,9 @@ public class AnalyticsServiceTest extends TestCase {
         assertTrue(payload.has(AnalyticsConstants.EnvelopDef.ENDPOINT_DETAILS));
         JsonObject endpointDetails = payload.get(AnalyticsConstants.EnvelopDef.ENDPOINT_DETAILS).getAsJsonObject();
         assertTrue(endpointDetails.has(AnalyticsConstants.EnvelopDef.ENDPOINT_NAME));
+        assertEquals(TEST_ENDPOINT_NAME, endpointDetails.get(AnalyticsConstants.EnvelopDef.ENDPOINT_NAME).getAsString());
+        assertTrue(endpointDetails.has(AnalyticsConstants.EnvelopDef.ENDPOINT_IS_ANONYMOUS));
+        assertFalse(endpointDetails.get(AnalyticsConstants.EnvelopDef.ENDPOINT_IS_ANONYMOUS).getAsBoolean());
     }
 
     private void verifyProxyServicePayload(JsonElement payloadElement) {

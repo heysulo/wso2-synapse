@@ -18,7 +18,6 @@
 
 package org.apache.synapse.analytics;
 
-import com.google.gson.JsonObject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -26,6 +25,8 @@ import org.apache.synapse.SequenceType;
 import org.apache.synapse.ServerConfigurationInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.analytics.elastic.ElasticsearchAnalyticsService;
+import org.apache.synapse.analytics.schema.AnalyticsDataSchema;
+import org.apache.synapse.analytics.schema.AnalyticsDataSchemaElement;
 import org.apache.synapse.api.API;
 import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.config.SynapsePropertiesLoader;
@@ -39,7 +40,6 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.netty.BridgeConstants;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -47,7 +47,6 @@ import java.util.Map;
 public class AnalyticsPublisher {
     private static final Log log = LogFactory.getLog(AnalyticsPublisher.class);
     private static final Collection<AnalyticsService> registeredServices = new ArrayList<>();
-    private static final JsonObject serverMetadata = new JsonObject();
 
     private static boolean analyticsDisabledForAPI;
     private static boolean analyticsDisabledForSequences;
@@ -57,19 +56,9 @@ public class AnalyticsPublisher {
     private static boolean namedSequencesOnly;
 
     public static synchronized void init(ServerConfigurationInformation serverInfo) {
-        prepareServerMetadata(serverInfo);
+        AnalyticsDataSchema.updateServerMetadata(serverInfo);
         loadConfigurations();
         prepareAnalyticServices();
-    }
-
-    private static void prepareServerMetadata(ServerConfigurationInformation serverInfo) {
-        serverMetadata.addProperty(AnalyticsConstants.ServerMetadataFieldDef.HOST_NAME, serverInfo.getHostName());
-        serverMetadata.addProperty(AnalyticsConstants.ServerMetadataFieldDef.SERVER_NAME, serverInfo.getServerName());
-        serverMetadata.addProperty(AnalyticsConstants.ServerMetadataFieldDef.IP_ADDRESS, serverInfo.getIpAddress());
-
-        String publisherId = SynapsePropertiesLoader.getPropertyValue(
-                AnalyticsConstants.SynapseConfiguration.IDENTIFIER, serverInfo.getHostName());
-        serverMetadata.addProperty(AnalyticsConstants.ServerMetadataFieldDef.PUBLISHER_ID, publisherId);
     }
 
     private static void loadConfigurations() {
@@ -109,18 +98,12 @@ public class AnalyticsPublisher {
         }
     }
 
-    public static void publishAnalytic(JsonObject payload) {
-        Instant analyticTimestamp = Instant.now();
-        JsonObject analyticsEnvelope = new JsonObject();
-        analyticsEnvelope.addProperty(AnalyticsConstants.EnvelopDef.TIMESTAMP, analyticTimestamp.toString());
-        analyticsEnvelope.addProperty(AnalyticsConstants.EnvelopDef.SCHEMA_VERSION,
-                AnalyticsConstants.SynapseConfiguration.SCHEMA_VERSION);
-        analyticsEnvelope.add(AnalyticsConstants.EnvelopDef.SERVER_INFO, serverMetadata);
-        analyticsEnvelope.add(AnalyticsConstants.EnvelopDef.PAYLOAD, payload);
+    public static void publishAnalytic(AnalyticsDataSchemaElement payload) {
+        AnalyticsDataSchema analyticsDataSchemaInst = new AnalyticsDataSchema(payload);
 
         registeredServices.forEach(service -> {
             if (service.isEnabled()) {
-                service.publish(analyticsEnvelope);
+                service.publish(analyticsDataSchemaInst);
             }
         });
     }
@@ -137,23 +120,23 @@ public class AnalyticsPublisher {
             return;
         }
 
-        JsonObject analytics = generateAnalyticsObject(synCtx, API.class);
+        AnalyticsDataSchemaElement analyticPayload = generateAnalyticsObject(synCtx, API.class);
 
-        JsonObject apiDetails = new JsonObject();
-        apiDetails.addProperty(AnalyticsConstants.EnvelopDef.API,
-                (String) synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
-        apiDetails.addProperty(AnalyticsConstants.EnvelopDef.SUB_REQUEST_PATH,
-                (String) synCtx.getProperty(RESTConstants.REST_SUB_REQUEST_PATH));
-        apiDetails.addProperty(AnalyticsConstants.EnvelopDef.API_CONTEXT,
-                (String) synCtx.getProperty(RESTConstants.REST_API_CONTEXT));
-        apiDetails.addProperty(AnalyticsConstants.EnvelopDef.METHOD,
-                (String) synCtx.getProperty(RESTConstants.REST_METHOD));
-        apiDetails.addProperty(AnalyticsConstants.EnvelopDef.TRANSPORT,
-                (String) synCtx.getProperty(SynapseConstants.TRANSPORT_IN_NAME));
-        analytics.add(AnalyticsConstants.EnvelopDef.API_DETAILS, apiDetails);
-        attachHttpProperties(analytics, synCtx);
+        AnalyticsDataSchemaElement apiDetails = new AnalyticsDataSchemaElement();
+        apiDetails.setAttribute(AnalyticsConstants.EnvelopDef.API,
+                synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        apiDetails.setAttribute(AnalyticsConstants.EnvelopDef.SUB_REQUEST_PATH,
+                synCtx.getProperty(RESTConstants.REST_SUB_REQUEST_PATH));
+        apiDetails.setAttribute(AnalyticsConstants.EnvelopDef.API_CONTEXT,
+                synCtx.getProperty(RESTConstants.REST_API_CONTEXT));
+        apiDetails.setAttribute(AnalyticsConstants.EnvelopDef.METHOD,
+                synCtx.getProperty(RESTConstants.REST_METHOD));
+        apiDetails.setAttribute(AnalyticsConstants.EnvelopDef.TRANSPORT,
+                synCtx.getProperty(SynapseConstants.TRANSPORT_IN_NAME));
+        analyticPayload.setAttribute(AnalyticsConstants.EnvelopDef.API_DETAILS, apiDetails);
+        attachHttpProperties(analyticPayload, synCtx);
 
-        publishAnalytic(analytics);
+        publishAnalytic(analyticPayload);
     }
 
     public static void publishSequenceMediatorAnalytics(MessageContext synCtx, SequenceMediator sequence) {
@@ -172,41 +155,41 @@ public class AnalyticsPublisher {
             return;
         }
 
-        JsonObject analytics = generateAnalyticsObject(synCtx, SequenceMediator.class);
+        AnalyticsDataSchemaElement analyticsPayload = generateAnalyticsObject(synCtx, SequenceMediator.class);
 
-        JsonObject sequenceDetails = new JsonObject();
-        sequenceDetails.addProperty(AnalyticsConstants.EnvelopDef.SEQUENCE_TYPE, sequence.getSequenceType().toString());
+        AnalyticsDataSchemaElement sequenceDetails = new AnalyticsDataSchemaElement();
+        sequenceDetails.setAttribute(AnalyticsConstants.EnvelopDef.SEQUENCE_TYPE, sequence.getSequenceType().toString());
         if (sequence.getSequenceType() == SequenceType.NAMED) {
-            sequenceDetails.addProperty(AnalyticsConstants.EnvelopDef.SEQUENCE_NAME, sequence.getName());
+            sequenceDetails.setAttribute(AnalyticsConstants.EnvelopDef.SEQUENCE_NAME, sequence.getName());
         } else {
-            sequenceDetails.addProperty(
+            sequenceDetails.setAttribute(
                     AnalyticsConstants.EnvelopDef.SEQUENCE_NAME, sequence.getSequenceNameForStatistics());
             switch (sequence.getSequenceType()) {
                 case API_INSEQ:
                 case API_OUTSEQ:
                 case API_FAULTSEQ:
-                    sequenceDetails.addProperty(AnalyticsConstants.EnvelopDef.SEQUENCE_API_CONTEXT,
-                            (String) synCtx.getProperty(RESTConstants.REST_API_CONTEXT));
-                    sequenceDetails.addProperty(AnalyticsConstants.EnvelopDef.SEQUENCE_API,
-                            (String) synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
-                    sequenceDetails.addProperty(AnalyticsConstants.EnvelopDef.SEQUENCE_API_SUB_REQUEST_PATH,
-                            (String) synCtx.getProperty(RESTConstants.REST_SUB_REQUEST_PATH));
-                    sequenceDetails.addProperty(AnalyticsConstants.EnvelopDef.SEQUENCE_API_METHOD,
-                            (String) synCtx.getProperty(RESTConstants.REST_METHOD));
+                    sequenceDetails.setAttribute(AnalyticsConstants.EnvelopDef.SEQUENCE_API_CONTEXT,
+                            synCtx.getProperty(RESTConstants.REST_API_CONTEXT));
+                    sequenceDetails.setAttribute(AnalyticsConstants.EnvelopDef.SEQUENCE_API,
+                            synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+                    sequenceDetails.setAttribute(AnalyticsConstants.EnvelopDef.SEQUENCE_API_SUB_REQUEST_PATH,
+                            synCtx.getProperty(RESTConstants.REST_SUB_REQUEST_PATH));
+                    sequenceDetails.setAttribute(AnalyticsConstants.EnvelopDef.SEQUENCE_API_METHOD,
+                            synCtx.getProperty(RESTConstants.REST_METHOD));
                     break;
                 case PROXY_INSEQ:
                 case PROXY_OUTSEQ:
                 case PROXY_FAULTSEQ:
-                    sequenceDetails.addProperty(AnalyticsConstants.EnvelopDef.SEQUENCE_PROXY_NAME,
-                            (String) synCtx.getProperty(SynapseConstants.PROXY_SERVICE));
+                    sequenceDetails.setAttribute(AnalyticsConstants.EnvelopDef.SEQUENCE_PROXY_NAME,
+                            synCtx.getProperty(SynapseConstants.PROXY_SERVICE));
                     break;
                 case ANON:
                     break;
             }
         }
 
-        analytics.add(AnalyticsConstants.EnvelopDef.SEQUENCE_DETAILS, sequenceDetails);
-        publishAnalytic(analytics);
+        analyticsPayload.setAttribute(AnalyticsConstants.EnvelopDef.SEQUENCE_DETAILS, sequenceDetails);
+        publishAnalytic(analyticsPayload);
     }
 
     public static void publishProxyServiceAnalytics(MessageContext synCtx, ProxyService proxyServiceDef) {
@@ -221,21 +204,21 @@ public class AnalyticsPublisher {
             return;
         }
 
-        JsonObject analytics = generateAnalyticsObject(synCtx, ProxyService.class);
+        AnalyticsDataSchemaElement analyticsPayload = generateAnalyticsObject(synCtx, ProxyService.class);
 
-        analytics.addProperty(AnalyticsConstants.EnvelopDef.PROXY_SERVICE_TRANSPORT,
-                (String) synCtx.getProperty(SynapseConstants.TRANSPORT_IN_NAME));
-        analytics.addProperty(AnalyticsConstants.EnvelopDef.PROXY_SERVICE_IS_DOING_REST,
-                (boolean) synCtx.getProperty(SynapseConstants.IS_CLIENT_DOING_REST));
-        analytics.addProperty(AnalyticsConstants.EnvelopDef.PROXY_SERVICE_IS_DOING_SOAP11,
-                (boolean) synCtx.getProperty(SynapseConstants.IS_CLIENT_DOING_SOAP11));
+        analyticsPayload.setAttribute(AnalyticsConstants.EnvelopDef.PROXY_SERVICE_TRANSPORT,
+                synCtx.getProperty(SynapseConstants.TRANSPORT_IN_NAME));
+        analyticsPayload.setAttribute(AnalyticsConstants.EnvelopDef.PROXY_SERVICE_IS_DOING_REST,
+                synCtx.getProperty(SynapseConstants.IS_CLIENT_DOING_REST));
+        analyticsPayload.setAttribute(AnalyticsConstants.EnvelopDef.PROXY_SERVICE_IS_DOING_SOAP11,
+                synCtx.getProperty(SynapseConstants.IS_CLIENT_DOING_SOAP11));
 
-        JsonObject proxyServiceDetails = new JsonObject();
-        proxyServiceDetails.addProperty(AnalyticsConstants.EnvelopDef.PROXY_SERVICE_NAME, proxyServiceDef.getName());
-        analytics.add(AnalyticsConstants.EnvelopDef.PROXY_SERVICE_DETAILS, proxyServiceDetails);
-        attachHttpProperties(analytics, synCtx);
+        AnalyticsDataSchemaElement proxyServiceDetails = new AnalyticsDataSchemaElement();
+        proxyServiceDetails.setAttribute(AnalyticsConstants.EnvelopDef.PROXY_SERVICE_NAME, proxyServiceDef.getName());
+        analyticsPayload.setAttribute(AnalyticsConstants.EnvelopDef.PROXY_SERVICE_DETAILS, proxyServiceDetails);
+        attachHttpProperties(analyticsPayload, synCtx);
 
-        publishAnalytic(analytics);
+        publishAnalytic(analyticsPayload);
     }
 
     public static void publishEndpointAnalytics(MessageContext synCtx, EndpointDefinition endpointDef) {
@@ -250,20 +233,23 @@ public class AnalyticsPublisher {
             return;
         }
 
-        JsonObject analytics = generateAnalyticsObject(synCtx, Endpoint.class);
+        AnalyticsDataSchemaElement analyticsPayload = generateAnalyticsObject(synCtx, Endpoint.class);
 
-        JsonObject endpointDetails = new JsonObject();
+        AnalyticsDataSchemaElement endpointDetails = new AnalyticsDataSchemaElement();
         String endpointName;
+        boolean isAnonymous = false;
         if ((endpointDef.leafEndpoint instanceof AbstractEndpoint) &&
-                ((AbstractEndpoint)endpointDef.leafEndpoint).isAnonymous()) {
+                ((AbstractEndpoint) endpointDef.leafEndpoint).isAnonymous()) {
             endpointName = SynapseConstants.ANONYMOUS_ENDPOINT;
+            isAnonymous = true;
         } else {
             endpointName = endpointDef.leafEndpoint.getName();
         }
-        endpointDetails.addProperty(AnalyticsConstants.EnvelopDef.ENDPOINT_NAME, endpointName);
-        analytics.add(AnalyticsConstants.EnvelopDef.ENDPOINT_DETAILS, endpointDetails);
+        endpointDetails.setAttribute(AnalyticsConstants.EnvelopDef.ENDPOINT_NAME, endpointName);
+        endpointDetails.setAttribute(AnalyticsConstants.EnvelopDef.ENDPOINT_IS_ANONYMOUS, isAnonymous);
+        analyticsPayload.setAttribute(AnalyticsConstants.EnvelopDef.ENDPOINT_DETAILS, endpointDetails);
 
-        publishAnalytic(analytics);
+        publishAnalytic(analyticsPayload);
     }
 
     public static void publishInboundEndpointAnalytics(MessageContext synCtx, InboundEndpoint endpointDef) {
@@ -285,72 +271,56 @@ public class AnalyticsPublisher {
             return;
         }
 
-        JsonObject analytics = generateAnalyticsObject(synCtx, InboundEndpoint.class);
+        AnalyticsDataSchemaElement analyticsPayload = generateAnalyticsObject(synCtx, InboundEndpoint.class);
 
-        JsonObject inboundEndpointDetails = new JsonObject();
-        inboundEndpointDetails.addProperty(AnalyticsConstants.EnvelopDef.INBOUND_ENDPOINT_NAME, endpointDef.getName());
-        inboundEndpointDetails.addProperty(AnalyticsConstants.EnvelopDef.INBOUND_ENDPOINT_PROTOCOL, endpointDef.getProtocol());
-        analytics.add(AnalyticsConstants.EnvelopDef.INBOUND_ENDPOINT_DETAILS, inboundEndpointDetails);
-        attachHttpProperties(analytics, synCtx);
+        AnalyticsDataSchemaElement inboundEndpointDetails = new AnalyticsDataSchemaElement();
+        inboundEndpointDetails.setAttribute(
+                AnalyticsConstants.EnvelopDef.INBOUND_ENDPOINT_NAME, endpointDef.getName());
+        inboundEndpointDetails.setAttribute(
+                AnalyticsConstants.EnvelopDef.INBOUND_ENDPOINT_PROTOCOL, endpointDef.getProtocol());
+        analyticsPayload.setAttribute(
+                AnalyticsConstants.EnvelopDef.INBOUND_ENDPOINT_DETAILS, inboundEndpointDetails);
+        attachHttpProperties(analyticsPayload, synCtx);
 
-        publishAnalytic(analytics);
+        publishAnalytic(analyticsPayload);
     }
 
-    private static JsonObject generateAnalyticsObject(MessageContext synCtx, Class<?> entityClass) {
-        JsonObject analytics = new JsonObject();
-        analytics.addProperty(AnalyticsConstants.EnvelopDef.ENTITY_TYPE, entityClass.getSimpleName());
-        analytics.addProperty(AnalyticsConstants.EnvelopDef.ENTITY_CLASS_NAME, entityClass.getName());
-        analytics.addProperty(AnalyticsConstants.EnvelopDef.FAULT_RESPONSE, synCtx.isFaultResponse());
-        analytics.addProperty(AnalyticsConstants.EnvelopDef.MESSAGE_ID, synCtx.getMessageID());
-        analytics.addProperty(AnalyticsConstants.EnvelopDef.CORRELATION_ID,
-                (String) synCtx.getProperty(CorrelationConstants.CORRELATION_ID));
-        analytics.addProperty(AnalyticsConstants.EnvelopDef.LATENCY, synCtx.getLatency());
+    private static AnalyticsDataSchemaElement generateAnalyticsObject(MessageContext synCtx, Class<?> entityClass) {
+        AnalyticsDataSchemaElement analyticPayload = new AnalyticsDataSchemaElement();
+        analyticPayload.setAttribute(AnalyticsConstants.EnvelopDef.ENTITY_TYPE, entityClass.getSimpleName());
+        analyticPayload.setAttribute(AnalyticsConstants.EnvelopDef.ENTITY_CLASS_NAME, entityClass.getName());
+        analyticPayload.setAttribute(AnalyticsConstants.EnvelopDef.FAULT_RESPONSE, synCtx.isFaultResponse());
+        analyticPayload.setAttribute(AnalyticsConstants.EnvelopDef.MESSAGE_ID, synCtx.getMessageID());
+        analyticPayload.setAttribute(AnalyticsConstants.EnvelopDef.CORRELATION_ID,
+                synCtx.getProperty(CorrelationConstants.CORRELATION_ID));
+        analyticPayload.setAttribute(AnalyticsConstants.EnvelopDef.LATENCY, synCtx.getLatency());
 
-        JsonObject metadata = new JsonObject();
+        AnalyticsDataSchemaElement metadata = new AnalyticsDataSchemaElement();
         Axis2MessageContext axis2mc = (Axis2MessageContext) synCtx;
         for (Map.Entry<String, Object> entry : axis2mc.getAnalyticsMetadata().entrySet()) {
-            Object value = entry.getValue();
-
-            if (value == null) {
+            if (entry.getValue() == null) {
                 continue; // Logstash fails at null
             }
-
-            if (value instanceof Boolean) {
-                metadata.addProperty(entry.getKey(), (Boolean) value);
-            } else if (value instanceof Double) {
-                metadata.addProperty(entry.getKey(), (Double) value);
-            } else if (value instanceof Float) {
-                metadata.addProperty(entry.getKey(), (Float) value);
-            } else if (value instanceof Integer) {
-                metadata.addProperty(entry.getKey(), (Integer) value);
-            } else if (value instanceof Long) {
-                metadata.addProperty(entry.getKey(), (Long) value);
-            } else if (value instanceof Short) {
-                metadata.addProperty(entry.getKey(), (Short) value);
-            } else if (value instanceof JsonObject) {
-                metadata.add(entry.getKey(), (JsonObject) value);
-            } else {
-                metadata.addProperty(entry.getKey(), value.toString());
-            }
+            metadata.setAttribute(entry.getKey(), entry.getValue());
         }
 
-        analytics.add(AnalyticsConstants.EnvelopDef.METADATA, metadata);
-        return analytics;
+        analyticPayload.setAttribute(AnalyticsConstants.EnvelopDef.METADATA, metadata);
+        return analyticPayload;
     }
 
-    private static void attachHttpProperties(JsonObject json, MessageContext synCtx) {
+    private static void attachHttpProperties(AnalyticsDataSchemaElement payload, MessageContext synCtx) {
 
         org.apache.axis2.context.MessageContext axisCtx = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
         if (axisCtx == null) {
             return;
         }
 
-        json.addProperty(AnalyticsConstants.EnvelopDef.REMOTE_HOST,
-                (String) axisCtx.getProperty(BridgeConstants.REMOTE_HOST));
-        json.addProperty(AnalyticsConstants.EnvelopDef.CONTENT_TYPE,
-                (String) axisCtx.getProperty(BridgeConstants.CONTENT_TYPE_HEADER));
-        json.addProperty(AnalyticsConstants.EnvelopDef.HTTP_METHOD,
-                (String) axisCtx.getProperty(BridgeConstants.HTTP_METHOD));
+        payload.setAttribute(AnalyticsConstants.EnvelopDef.REMOTE_HOST,
+                axisCtx.getProperty(BridgeConstants.REMOTE_HOST));
+        payload.setAttribute(AnalyticsConstants.EnvelopDef.CONTENT_TYPE,
+                axisCtx.getProperty(BridgeConstants.CONTENT_TYPE_HEADER));
+        payload.setAttribute(AnalyticsConstants.EnvelopDef.HTTP_METHOD,
+                axisCtx.getProperty(BridgeConstants.HTTP_METHOD));
     }
 
     public static boolean isNamedSequencesOnly() {
